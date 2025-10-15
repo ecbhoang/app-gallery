@@ -1,0 +1,24 @@
+[
+  {
+    "id": 1,
+    "name": "Theme Feedback",
+    "icon": "https://img.icons8.com/ios-filled/100/ffffff/news.png",
+    "url": "google.com",
+    "description": "Send feedback about storefront.",
+    "tag": [
+      "shopify",
+      "ecommerce"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Theme Feedback 2",
+    "icon": "https://img.icons8.com/ios-filled/100/ffffff/news.png",
+    "url": "google.com",
+    "description": "Send feedback about storefront.",
+    "tag": [
+      "shopify",
+      "ecommerce"
+    ]
+  }
+]

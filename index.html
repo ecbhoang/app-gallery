@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Launchpad Gallery</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: transparent;
+      color-scheme: dark;
+    }
+
+    button {
+      --glass-bg: color-mix(in oklab, var(--bg) 20%, transparent);
+      --glass-border: color-mix(in oklab, var(--glass-bg) 70%, white);
+    }
+
+    body {
+      font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI",
+        sans-serif;
+      min-height: 100vh;
+      /* background: url(/bg-photo-gallery.avif); */
+      background-attachment: fixed;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: cover;
+    }
+
+    .loading-dot {
+      animation: bounce 1.4s infinite ease-in-out both;
+    }
+
+    .loading-dot:nth-child(2) {
+      animation-delay: -0.16s;
+    }
+
+    .loading-dot:nth-child(3) {
+      animation-delay: -0.32s;
+    }
+
+    @keyframes bounce {
+
+      0%,
+      80%,
+      100% {
+        transform: scale(0);
+      }
+
+      40% {
+        transform: scale(1);
+      }
+    }
+
+    .app-card.jiggle {
+      animation: jiggle 0.25s infinite;
+    }
+
+    @keyframes jiggle {
+
+      0%,
+      100% {
+        transform: rotate(-1deg);
+      }
+
+      50% {
+        transform: rotate(1deg);
+      }
+    }
+
+    .pagination-indicator-active {
+      width: 32px;
+      background: linear-gradient(135deg,
+          rgba(168, 85, 247, 0.8),
+          rgba(59, 130, 246, 0.8));
+    }
+
+    .pagination-indicator-inactive {
+      width: 12px;
+      background: rgba(148, 163, 184, 0.3);
+    }
+  </style>
+</head>
+
+<body class="relative flex min-h-screen flex-col items-center select-none bg-[url(/bg-photo-gallery.avif)]">
+  <div class="absolute top-0 right-0 bottom-0 left-0 bg-black/10 backdrop-blur-[2px]"></div>
+  <div id="loading-screen"
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 backdrop-blur-3xl transition-opacity duration-500">
+    <div class="flex items-center gap-3 text-slate-200">
+      <div class="flex items-center gap-2">
+        <span class="loading-dot h-3 w-3 rounded-full bg-slate-100"></span>
+        <span class="loading-dot h-3 w-3 rounded-full bg-slate-100"></span>
+        <span class="loading-dot h-3 w-3 rounded-full bg-slate-100"></span>
+      </div>
+    </div>
+  </div>
+
+  <main class="flex w-full flex-1 flex-col items-center px-4 pb-8 pt-12 sm:pt-16">
+    <header
+      class="sticky top-6 z-10 mb-10 flex w-full max-w-4xl shadow-lg items-center transition-transform duration-300 rounded-3xl h-16 w-16 p-4 font-semibold shadow-2xl/20 inset-shadow-sm inset-shadow-current/15 backdrop-blur-sm bg-(--glass-bg) inset-shadow-sm text-white w-fit cursor-pointer [&:hover]:scale-105 transition duration-300"
+      style="--bg: color-mix(in oklab, black 20%, transparent)">
+      <svg class="mr-3 h-5 w-5 text-slate-300" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"></circle>
+        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+      </svg>
+      <input id="search-input" type="search" placeholder="Search apps…"
+        class="w-full bg-transparent outline-none border-0 text-slate-100 placeholder:text-slate-500 focus:outline-none focus:shadow-none border-transparent focus:border-transparent focus:ring-0"
+        autocomplete="off" />
+      <div
+        class="hidden items-center gap-1 rounded-full bg-slate-700/50 px-3 py-1 text-xs font-medium text-slate-300 sm:flex">
+        <span>⌘</span>
+        <span>K</span>
+      </div>
+    </header>
+
+    <section class="relative flex w-full max-w-5xl flex-1 flex-col overflow-hidden rounded-3xl p-6">
+      <div id="launchpad-grid" class="relative flex-1 overflow-hidden">
+        <div id="launchpad-pages"
+          class="flex h-full w-full transition-transform duration-500 ease-in-out will-change-transform"
+          style="transform: translateX(0);"></div>
+        <div id="empty-state"
+          class="pointer-events-none absolute inset-0 hidden grid place-content-center px-6 text-slate-300">
+          <div
+            class="pointer-events-auto flex max-w-sm flex-col items-center gap-6 rounded-3xl border border-white/10 bg-white/5 px-8 py-10 text-center shadow-2xl backdrop-blur-xl">
+            <div class="relative flex h-28 w-28 items-center justify-center">
+              <span class="absolute inset-0 rounded-full bg-gradient-to-br from-sky-400/30 via-blue-500/20 to-fuchsia-500/30 blur-xl"></span>
+              <span class="absolute inset-2 rounded-full border border-white/20 bg-white/10 backdrop-blur"></span>
+              <svg class="relative h-14 w-14 text-slate-100" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48"
+                fill="none">
+                <path d="M8 16a8 8 0 0 1 8-8h16a8 8 0 0 1 8 8v16a8 8 0 0 1-8 8H16a8 8 0 0 1-8-8V16Z" stroke="currentColor"
+                  stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+                <path d="M18 21h12M16 27h16" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"
+                  stroke-linejoin="round" />
+                <circle cx="16.5" cy="16.5" r="3.5" fill="currentColor" />
+              </svg>
+            </div>
+            <div class="space-y-2">
+              <h3 class="text-lg font-semibold text-slate-100">No applications found</h3>
+              <p class="text-sm text-slate-400">Try another keyword or press Esc to reset the search and see everything.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="pagination-controls" class="mt-8 flex items-center justify-center gap-3"></div>
+    </section>
+  </main>
+
+  <template id="app-card-template">
+    <button
+      class="app-card select-none group flex flex-col items-center justify-center gap-3 rounded-2xl px-4 py-6 transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-0 focus-visible:transparent"
+      draggable="false" data-app-id="">
+      <span
+        class="transition-transform duration-300 group-hover:scale-105 rounded-3xl h-16 w-16 p-4 font-semibold shadow-2xl/20 inset-shadow-sm inset-shadow-current/15 backdrop-blur-sm bg-(--glass-bg) inset-shadow-sm text-white w-fit cursor-pointer [&:hover]:scale-110 transition duration-300"
+        style="--bg: color-mix(in oklab, black 20%, transparent)">
+        <img data-app-icon alt="" class="h-full w-full rounded-xl object-contain" loading="lazy" />
+      </span>
+      <span data-app-name
+        class="text-center text-sm font-medium text-slate-100 transition-colors duration-300 truncate max-w-full"></span>
+    </button>
+  </template>
+
+  <script type="module" src="./main.js"></script>
+</body>
+
+</html>
