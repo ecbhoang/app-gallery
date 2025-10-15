@@ -4,6 +4,12 @@ const SCROLL_PAGE_THRESHOLD = 60;
 const DEFAULT_ICON = "./default-icon.svg";
 const SETTINGS_STORAGE_KEY = "launchpad.settings.v1";
 
+const PRESET_BACKGROUND_OPTIONS = [
+  "./bg-photo-gallery.avif",
+  "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=80",
+  "https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?auto=format&fit=crop&w=1600&q=80",
+];
+
 const defaultSettings = {
   backgroundType: "image",
   backgroundImage: "./bg-photo-gallery.avif",
@@ -40,6 +46,12 @@ const dom = {
   settingsSkip: document.getElementById("settings-skip"),
   backgroundImageFields: document.querySelector("[data-background-image-fields]"),
   backgroundColorFields: document.querySelector("[data-background-color-fields]"),
+  backgroundImageCustomFields: document.querySelector(
+    "[data-background-image-custom-fields]"
+  ),
+  backgroundImageCustomInput: document.getElementById(
+    "settings-background-image-custom"
+  ),
   overlayValue: document.getElementById("overlay-opacity-value"),
   blurValue: document.getElementById("blur-strength-value"),
   glassValue: document.getElementById("glass-opacity-value"),
@@ -240,9 +252,8 @@ function populateSettingsForm(settings) {
     input.checked = input.value === merged.backgroundType;
   });
 
-  if (form.elements.backgroundImage) {
-    form.elements.backgroundImage.value = merged.backgroundImage ?? "";
-  }
+  syncBackgroundImageSelection(merged.backgroundImage ?? "");
+
   if (form.elements.backgroundColor) {
     form.elements.backgroundColor.value = resolveHexColor(
       merged.backgroundColor,
@@ -292,6 +303,43 @@ function syncBackgroundFieldVisibility(backgroundType) {
   } else {
     dom.backgroundImageFields.classList.remove("hidden");
     dom.backgroundColorFields.classList.add("hidden");
+  }
+}
+
+function syncBackgroundImageSelection(currentValue) {
+  if (!dom.settingsForm) return;
+
+  const choiceInputs = dom.settingsForm.querySelectorAll(
+    'input[name="backgroundImageChoice"]'
+  );
+
+  const normalized = sanitizeBackgroundImage(currentValue);
+  const matchedChoice = PRESET_BACKGROUND_OPTIONS.includes(normalized)
+    ? normalized
+    : normalized
+    ? "custom"
+    : PRESET_BACKGROUND_OPTIONS[0];
+
+  choiceInputs.forEach((input) => {
+    input.checked = input.value === matchedChoice;
+  });
+
+  if (dom.backgroundImageCustomInput) {
+    dom.backgroundImageCustomInput.value =
+      matchedChoice === "custom" ? normalized : "";
+  }
+
+  syncBackgroundImageCustomVisibility(matchedChoice);
+}
+
+function syncBackgroundImageCustomVisibility(choiceValue) {
+  if (!dom.backgroundImageCustomFields) return;
+  if (choiceValue === "custom") {
+    dom.backgroundImageCustomFields.classList.remove("hidden");
+    dom.backgroundImageCustomInput?.removeAttribute("disabled");
+  } else {
+    dom.backgroundImageCustomFields.classList.add("hidden");
+    dom.backgroundImageCustomInput?.setAttribute("disabled", "true");
   }
 }
 
@@ -347,6 +395,22 @@ function setupSettingsUI() {
   backgroundTypeInputs.forEach((input) => {
     input.addEventListener("change", () => {
       syncBackgroundFieldVisibility(input.value);
+    });
+  });
+
+  const backgroundChoiceInputs = dom.settingsForm.querySelectorAll(
+    'input[name="backgroundImageChoice"]'
+  );
+  backgroundChoiceInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      if (input.checked) {
+        syncBackgroundImageCustomVisibility(input.value);
+        if (input.value === "custom") {
+          window.setTimeout(() => {
+            dom.backgroundImageCustomInput?.focus({ preventScroll: true });
+          }, 0);
+        }
+      }
     });
   });
 
@@ -466,9 +530,20 @@ function handleSettingsSubmit() {
   const backgroundType =
     formData.get("backgroundType") === "color" ? "color" : "image";
 
+  const rawChoice = formData.get("backgroundImageChoice");
+  const backgroundChoice =
+    typeof rawChoice === "string" && rawChoice
+      ? rawChoice
+      : PRESET_BACKGROUND_OPTIONS[0];
+
+  const backgroundImage =
+    backgroundChoice === "custom"
+      ? sanitizeBackgroundImage(formData.get("backgroundImageCustom"))
+      : sanitizeBackgroundImage(backgroundChoice);
+
   const nextSettings = {
     backgroundType,
-    backgroundImage: sanitizeBackgroundImage(formData.get("backgroundImage")),
+    backgroundImage,
     backgroundColor: resolveHexColor(
       formData.get("backgroundColor"),
       defaultSettings.backgroundColor
@@ -516,9 +591,6 @@ async function init() {
 
   window.setTimeout(() => {
     hideLoadingScreen();
-    if (!state.settings.hasCompletedSetup) {
-      showSettingsModal({ autofocus: true });
-    }
   }, 600);
 }
 
