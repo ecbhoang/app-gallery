@@ -2,6 +2,18 @@ const APPS_SOURCE = "./apps.sample.json";
 const PAGE_SIZE = 28;
 const SCROLL_PAGE_THRESHOLD = 60;
 const DEFAULT_ICON = "./default-icon.svg";
+const SETTINGS_STORAGE_KEY = "launchpad.settings.v1";
+
+const defaultSettings = {
+  backgroundType: "image",
+  backgroundImage: "./bg-photo-gallery.avif",
+  backgroundColor: "#0f172a",
+  overlayOpacity: 0.12,
+  blurStrength: 2,
+  glassTintColor: "#1e293b",
+  glassTintOpacity: 0.55,
+  hasCompletedSetup: false,
+};
 
 const state = {
   apps: [],
@@ -9,6 +21,7 @@ const state = {
   searchTerm: "",
   currentPage: 0,
   activeIndex: 0,
+  settings: { ...defaultSettings },
 };
 
 const dom = {
@@ -19,14 +32,494 @@ const dom = {
   cardTemplate: document.getElementById("app-card-template"),
   emptyState: document.getElementById("empty-state"),
   gridViewport: document.getElementById("launchpad-grid"),
+  backgroundOverlay: document.getElementById("background-overlay"),
+  openSettingsButton: document.getElementById("open-settings"),
+  settingsModal: document.getElementById("settings-modal"),
+  settingsForm: document.getElementById("settings-form"),
+  settingsCancel: document.getElementById("settings-cancel"),
+  settingsSkip: document.getElementById("settings-skip"),
+  backgroundImageFields: document.querySelector("[data-background-image-fields]"),
+  backgroundColorFields: document.querySelector("[data-background-color-fields]"),
+  overlayValue: document.getElementById("overlay-opacity-value"),
+  blurValue: document.getElementById("blur-strength-value"),
+  glassValue: document.getElementById("glass-opacity-value"),
 };
 
+function loadSettingsFromStorage() {
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) {
+      return { ...defaultSettings };
+    }
+    const parsed = JSON.parse(raw);
+    return {
+      ...defaultSettings,
+      ...parsed,
+      backgroundType: parsed.backgroundType === "color" ? "color" : "image",
+      overlayOpacity: clampNumber(
+        parsed.overlayOpacity,
+        0,
+        0.6,
+        defaultSettings.overlayOpacity
+      ),
+      blurStrength: clampNumber(
+        parsed.blurStrength,
+        0,
+        20,
+        defaultSettings.blurStrength
+      ),
+      glassTintOpacity: clampNumber(
+        parsed.glassTintOpacity,
+        0.05,
+        0.95,
+        defaultSettings.glassTintOpacity
+      ),
+      glassTintColor: resolveHexColor(
+        parsed.glassTintColor,
+        defaultSettings.glassTintColor
+      ),
+      backgroundColor: resolveHexColor(
+        parsed.backgroundColor,
+        defaultSettings.backgroundColor
+      ),
+      backgroundImage: sanitizeBackgroundImage(parsed.backgroundImage) || "",
+    };
+  } catch (error) {
+    console.warn("Failed to read settings from storage", error);
+    return { ...defaultSettings };
+  }
+}
+
+function saveSettingsToStorage(settings) {
+  try {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch (error) {
+    console.warn("Failed to save settings", error);
+  }
+}
+
+function clampNumber(value, min, max, fallback) {
+  const number = Number.parseFloat(value);
+  if (!Number.isFinite(number)) {
+    return fallback;
+  }
+  return Math.min(Math.max(number, min), max);
+}
+
+function hexToRgb(hex) {
+  if (typeof hex !== "string") return null;
+  const trimmed = hex.trim();
+  if (!trimmed) return null;
+  const withoutHash = trimmed.startsWith("#")
+    ? trimmed.slice(1)
+    : trimmed;
+  const normalized =
+    withoutHash.length === 3
+      ? withoutHash
+          .split("")
+          .map((char) => char + char)
+          .join("")
+      : withoutHash;
+  if (normalized.length !== 6) return null;
+  const value = Number.parseInt(normalized, 16);
+  if (Number.isNaN(value)) return null;
+  return {
+    r: (value >> 16) & 255,
+    g: (value >> 8) & 255,
+    b: value & 255,
+  };
+}
+
+function rgbToHex(rgb) {
+  if (!rgb) return null;
+  const toHex = (component) => component.toString(16).padStart(2, "0");
+  return `#${toHex(rgb.r)}${toHex(rgb.g)}${toHex(rgb.b)}`;
+}
+
+function rgbToRgba(rgb, alpha) {
+  if (!rgb) return "rgba(15, 23, 42, 0.4)";
+  const safeAlpha = Math.min(Math.max(alpha, 0), 1);
+  return `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${safeAlpha})`;
+}
+
+function resolveHexColor(value, fallback) {
+  const rgb = hexToRgb(value);
+  if (rgb) {
+    return rgbToHex(rgb);
+  }
+  const fallbackRgb = hexToRgb(fallback);
+  return fallbackRgb ? rgbToHex(fallbackRgb) : fallback;
+}
+
+function sanitizeBackgroundImage(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  if (/javascript:/i.test(trimmed)) return "";
+  return trimmed;
+}
+
+function applySettings(settings) {
+  const overlayOpacity = clampNumber(
+    settings.overlayOpacity,
+    0,
+    0.6,
+    defaultSettings.overlayOpacity
+  );
+  const blurStrength = clampNumber(
+    settings.blurStrength,
+    0,
+    20,
+    defaultSettings.blurStrength
+  );
+  const glassOpacity = clampNumber(
+    settings.glassTintOpacity,
+    0.05,
+    0.95,
+    defaultSettings.glassTintOpacity
+  );
+  const glassHex = resolveHexColor(
+    settings.glassTintColor,
+    defaultSettings.glassTintColor
+  );
+  const glassRgb = hexToRgb(glassHex) ?? hexToRgb(defaultSettings.glassTintColor);
+
+  document.documentElement.style.setProperty(
+    "--overlay-color",
+    rgbToRgba(glassRgb, overlayOpacity)
+  );
+  document.documentElement.style.setProperty(
+    "--overlay-blur",
+    `${blurStrength}px`
+  );
+  document.documentElement.style.setProperty(
+    "--glass-tint",
+    rgbToRgba(glassRgb, glassOpacity)
+  );
+
+  if (settings.backgroundType === "color") {
+    const backgroundHex = resolveHexColor(
+      settings.backgroundColor,
+      defaultSettings.backgroundColor
+    );
+    document.body.style.backgroundImage = "none";
+    document.body.style.backgroundColor = backgroundHex;
+    document.documentElement.style.setProperty(
+      "--fallback-background-color",
+      backgroundHex
+    );
+  } else {
+    const source = sanitizeBackgroundImage(settings.backgroundImage);
+    if (source) {
+      const cssValue = source.includes("(")
+        ? source
+        : `url("${source.replace(/"/g, '\\"')}")`;
+      document.body.style.backgroundImage = cssValue;
+    } else {
+      document.body.style.backgroundImage = "";
+    }
+    document.body.style.backgroundColor = "";
+    document.documentElement.style.setProperty(
+      "--fallback-background-color",
+      defaultSettings.backgroundColor
+    );
+  }
+}
+
+function populateSettingsForm(settings) {
+  const form = dom.settingsForm;
+  if (!form) return;
+
+  const merged = {
+    ...defaultSettings,
+    ...settings,
+  };
+
+  const typeInputs = form.querySelectorAll('input[name="backgroundType"]');
+  typeInputs.forEach((input) => {
+    input.checked = input.value === merged.backgroundType;
+  });
+
+  if (form.elements.backgroundImage) {
+    form.elements.backgroundImage.value = merged.backgroundImage ?? "";
+  }
+  if (form.elements.backgroundColor) {
+    form.elements.backgroundColor.value = resolveHexColor(
+      merged.backgroundColor,
+      defaultSettings.backgroundColor
+    );
+  }
+  if (form.elements.overlayOpacity) {
+    form.elements.overlayOpacity.value = clampNumber(
+      merged.overlayOpacity,
+      0,
+      0.6,
+      defaultSettings.overlayOpacity
+    );
+  }
+  if (form.elements.blurStrength) {
+    form.elements.blurStrength.value = clampNumber(
+      merged.blurStrength,
+      0,
+      20,
+      defaultSettings.blurStrength
+    );
+  }
+  if (form.elements.glassTintOpacity) {
+    form.elements.glassTintOpacity.value = clampNumber(
+      merged.glassTintOpacity,
+      0.05,
+      0.95,
+      defaultSettings.glassTintOpacity
+    );
+  }
+  if (form.elements.glassTintColor) {
+    form.elements.glassTintColor.value = resolveHexColor(
+      merged.glassTintColor,
+      defaultSettings.glassTintColor
+    );
+  }
+
+  syncBackgroundFieldVisibility(merged.backgroundType);
+  updateSettingsIndicators(merged);
+}
+
+function syncBackgroundFieldVisibility(backgroundType) {
+  if (!dom.backgroundImageFields || !dom.backgroundColorFields) return;
+  if (backgroundType === "color") {
+    dom.backgroundImageFields.classList.add("hidden");
+    dom.backgroundColorFields.classList.remove("hidden");
+  } else {
+    dom.backgroundImageFields.classList.remove("hidden");
+    dom.backgroundColorFields.classList.add("hidden");
+  }
+}
+
+function updateSettingsIndicators(settings) {
+  if (dom.overlayValue) {
+    const percent = Math.round(
+      clampNumber(
+        settings.overlayOpacity,
+        0,
+        0.6,
+        defaultSettings.overlayOpacity
+      ) * 100
+    );
+    dom.overlayValue.textContent = `${percent}%`;
+  }
+  if (dom.blurValue) {
+    const blur = Math.round(
+      clampNumber(
+        settings.blurStrength,
+        0,
+        20,
+        defaultSettings.blurStrength
+      )
+    );
+    dom.blurValue.textContent = `${blur}px`;
+  }
+  if (dom.glassValue) {
+    const opacityPercent = Math.round(
+      clampNumber(
+        settings.glassTintOpacity,
+        0.05,
+        0.95,
+        defaultSettings.glassTintOpacity
+      ) * 100
+    );
+    dom.glassValue.textContent = `${opacityPercent}%`;
+  }
+}
+
+function setupSettingsUI() {
+  if (!dom.settingsForm) return;
+
+  populateSettingsForm(state.settings);
+
+  dom.settingsForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    handleSettingsSubmit();
+  });
+
+  const backgroundTypeInputs = dom.settingsForm.querySelectorAll(
+    'input[name="backgroundType"]'
+  );
+  backgroundTypeInputs.forEach((input) => {
+    input.addEventListener("change", () => {
+      syncBackgroundFieldVisibility(input.value);
+    });
+  });
+
+  const overlayRange = dom.settingsForm.elements.overlayOpacity;
+  if (overlayRange) {
+    overlayRange.addEventListener("input", (event) => {
+      const value = clampNumber(
+        event.target.value,
+        0,
+        0.6,
+        defaultSettings.overlayOpacity
+      );
+      updateSettingsIndicators({ ...state.settings, overlayOpacity: value });
+    });
+  }
+
+  const blurRange = dom.settingsForm.elements.blurStrength;
+  if (blurRange) {
+    blurRange.addEventListener("input", (event) => {
+      const value = clampNumber(
+        event.target.value,
+        0,
+        20,
+        defaultSettings.blurStrength
+      );
+      updateSettingsIndicators({ ...state.settings, blurStrength: value });
+    });
+  }
+
+  const glassRange = dom.settingsForm.elements.glassTintOpacity;
+  if (glassRange) {
+    glassRange.addEventListener("input", (event) => {
+      const value = clampNumber(
+        event.target.value,
+        0.05,
+        0.95,
+        defaultSettings.glassTintOpacity
+      );
+      updateSettingsIndicators({ ...state.settings, glassTintOpacity: value });
+    });
+  }
+
+  dom.openSettingsButton?.addEventListener("click", () => {
+    showSettingsModal({ autofocus: true });
+  });
+
+  dom.settingsCancel?.addEventListener("click", () => {
+    closeSettingsModal({ markCompleted: true });
+  });
+
+  dom.settingsSkip?.addEventListener("click", () => {
+    closeSettingsModal({ markCompleted: true });
+  });
+
+  dom.settingsModal?.addEventListener("click", (event) => {
+    if (event.target === dom.settingsModal) {
+      closeSettingsModal({ markCompleted: true });
+    }
+  });
+}
+
+function showSettingsModal(options = {}) {
+  if (!dom.settingsModal) return;
+  populateSettingsForm(state.settings);
+  dom.settingsModal.classList.remove("hidden");
+  dom.settingsModal.classList.add("flex");
+  dom.settingsModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("overflow-hidden");
+
+  if (options.autofocus !== false) {
+    window.setTimeout(() => {
+      if (!dom.settingsForm) return;
+      const preferred = Array.from(
+        dom.settingsForm.querySelectorAll("[data-autofocus]")
+      );
+      const fallbacks = Array.from(
+        dom.settingsForm.querySelectorAll("input, select, textarea, button")
+      );
+      const candidates = [...preferred, ...fallbacks];
+      const target = candidates.find(
+        (element) =>
+          element instanceof HTMLElement &&
+          !element.hasAttribute("disabled") &&
+          element.offsetParent !== null
+      );
+      target?.focus({ preventScroll: true });
+    }, 0);
+  }
+}
+
+function closeSettingsModal(options = {}) {
+  if (!dom.settingsModal) return;
+  dom.settingsModal.classList.add("hidden");
+  dom.settingsModal.classList.remove("flex");
+  dom.settingsModal.setAttribute("aria-hidden", "true");
+  document.body.classList.remove("overflow-hidden");
+  populateSettingsForm(state.settings);
+
+  if (options.markCompleted) {
+    state.settings = {
+      ...state.settings,
+      hasCompletedSetup: true,
+    };
+    saveSettingsToStorage(state.settings);
+  }
+}
+
+function isSettingsModalOpen() {
+  return Boolean(
+    dom.settingsModal && !dom.settingsModal.classList.contains("hidden")
+  );
+}
+
+function handleSettingsSubmit() {
+  if (!dom.settingsForm) return;
+  const formData = new FormData(dom.settingsForm);
+  const backgroundType =
+    formData.get("backgroundType") === "color" ? "color" : "image";
+
+  const nextSettings = {
+    backgroundType,
+    backgroundImage: sanitizeBackgroundImage(formData.get("backgroundImage")),
+    backgroundColor: resolveHexColor(
+      formData.get("backgroundColor"),
+      defaultSettings.backgroundColor
+    ),
+    overlayOpacity: clampNumber(
+      formData.get("overlayOpacity"),
+      0,
+      0.6,
+      defaultSettings.overlayOpacity
+    ),
+    blurStrength: clampNumber(
+      formData.get("blurStrength"),
+      0,
+      20,
+      defaultSettings.blurStrength
+    ),
+    glassTintColor: resolveHexColor(
+      formData.get("glassTintColor"),
+      defaultSettings.glassTintColor
+    ),
+    glassTintOpacity: clampNumber(
+      formData.get("glassTintOpacity"),
+      0.05,
+      0.95,
+      defaultSettings.glassTintOpacity
+    ),
+    hasCompletedSetup: true,
+  };
+
+  state.settings = nextSettings;
+  applySettings(state.settings);
+  saveSettingsToStorage(state.settings);
+  closeSettingsModal({ markCompleted: true });
+}
+
 async function init() {
+  state.settings = loadSettingsFromStorage();
+  applySettings(state.settings);
+  setupSettingsUI();
+
   await loadApps();
   attachGlobalListeners();
   applyFilter("");
   state.activeIndex = -1;
-  window.setTimeout(hideLoadingScreen, 600);
+
+  window.setTimeout(() => {
+    hideLoadingScreen();
+    if (!state.settings.hasCompletedSetup) {
+      showSettingsModal({ autofocus: true });
+    }
+  }, 600);
 }
 
 async function loadApps() {
@@ -70,6 +563,13 @@ function attachGlobalListeners() {
     "keydown",
     (event) => {
       const key = event.key;
+      if (isSettingsModalOpen()) {
+        if (key === "Escape") {
+          event.preventDefault();
+          closeSettingsModal({ markCompleted: true });
+        }
+        return;
+      }
       const isSearchFocused = document.activeElement === dom.searchInput;
       const normalizedKey = typeof key === "string" ? key.toLowerCase() : "";
 
