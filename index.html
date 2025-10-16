@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Launchpad Gallery</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link rel="icon" type="image/svg+xml" href="/default-icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -268,12 +269,12 @@
                 <div class="flex h-20 w-full items-center justify-center rounded-xl border border-white/10 bg-slate-900/40 text-xs uppercase tracking-wide text-slate-400 transition peer-checked:border-sky-400/40 peer-checked:text-sky-200">
                   Custom link
                 </div>
-                <div class="text-xs text-slate-400">Paste any image or gradient URL.</div>
+                <div class="text-xs text-slate-400">Paste any image or gradient reference.</div>
               </label>
             </div>
             <div data-background-image-custom-fields class="hidden space-y-2">
               <label for="settings-background-image-custom"
-                class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Custom image URL</label>
+                class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Custom image source</label>
               <input id="settings-background-image-custom" name="backgroundImageCustom" type="text" data-autofocus
                 class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
                 placeholder="e.g. https://images.unsplash.com/..." />
