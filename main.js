@@ -3,6 +3,7 @@ const PAGE_SIZE = 28;
 const SCROLL_PAGE_THRESHOLD = 60;
 const DEFAULT_ICON = "./default-icon.svg";
 const SETTINGS_STORAGE_KEY = "launchpad.settings.v1";
+const MOBILE_BREAKPOINT = "(max-width: 640px)";
 
 const PRESET_BACKGROUND_OPTIONS = [
   "./bg-photo-gallery.avif",
@@ -56,6 +57,28 @@ const dom = {
   blurValue: document.getElementById("blur-strength-value"),
   glassValue: document.getElementById("glass-opacity-value"),
 };
+
+const mobileLayoutQuery = window.matchMedia(MOBILE_BREAKPOINT);
+
+function isMobileLayout() {
+  return mobileLayoutQuery.matches;
+}
+
+function getTotalPages() {
+  if (isMobileLayout()) {
+    return 1;
+  }
+
+  return Math.max(1, Math.ceil(state.filteredApps.length / PAGE_SIZE));
+}
+
+function getEffectivePageSize() {
+  if (isMobileLayout()) {
+    return Math.max(state.filteredApps.length, 1);
+  }
+
+  return PAGE_SIZE;
+}
 
 function loadSettingsFromStorage() {
   try {
@@ -727,6 +750,7 @@ function setupSwipePaging() {
   dom.gridViewport.style.touchAction = "pan-y";
 
   dom.gridViewport.addEventListener("pointerdown", (event) => {
+    if (isMobileLayout()) return;
     pointerId = event.pointerId;
     startX = event.clientX;
     dom.gridViewport.setPointerCapture(pointerId);
@@ -734,6 +758,10 @@ function setupSwipePaging() {
 
   dom.gridViewport.addEventListener("pointerup", (event) => {
     if (pointerId !== event.pointerId) return;
+    if (isMobileLayout()) {
+      pointerId = null;
+      return;
+    }
     const delta = event.clientX - startX;
     if (Math.abs(delta) > SCROLL_PAGE_THRESHOLD) {
       if (delta < 0) {
@@ -757,11 +785,8 @@ function setupWheelPaging() {
   dom.gridViewport.addEventListener(
     "wheel",
     (event) => {
-      const totalPages = Math.max(
-        1,
-        Math.ceil(state.filteredApps.length / PAGE_SIZE)
-      );
-      if (totalPages <= 1) return;
+      const totalPages = getTotalPages();
+      if (isMobileLayout() || totalPages <= 1) return;
 
       const dominantDelta =
         Math.abs(event.deltaX) >= Math.abs(event.deltaY)
@@ -827,43 +852,59 @@ function render() {
 function renderPages() {
   dom.pagesWrapper.innerHTML = "";
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(state.filteredApps.length / PAGE_SIZE)
-  );
+  const isMobile = isMobileLayout();
+  const totalPages = getTotalPages();
+  const safePageIndex = Math.min(state.currentPage, totalPages - 1);
+
+  if (safePageIndex !== state.currentPage) {
+    state.currentPage = safePageIndex;
+  }
 
   for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
     const page = document.createElement("div");
-    page.className =
-      "flex h-full w-full shrink-0 items-stretch justify-center";
+    page.className = isMobile
+      ? "flex w-full items-stretch justify-center"
+      : "flex h-full w-full shrink-0 items-stretch justify-center";
 
     const grid = document.createElement("div");
-    grid.className =
-      "grid h-full w-full grid-cols-3 gap-6 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7";
+    grid.className = isMobile
+      ? "grid w-full grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
+      : "grid h-full w-full grid-cols-3 gap-6 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7";
 
-    const start = pageIndex * PAGE_SIZE;
-    const end = start + PAGE_SIZE;
+    const pageSize = isMobile ? state.filteredApps.length : PAGE_SIZE;
+    const start = isMobile ? 0 : pageIndex * pageSize;
+    const end = isMobile ? state.filteredApps.length : start + pageSize;
     const slice = state.filteredApps.slice(start, end);
 
     slice.forEach((app, sliceIndex) => {
-      const card = createAppCard(app, start + sliceIndex);
+      const absoluteIndex = isMobile ? sliceIndex : start + sliceIndex;
+      const card = createAppCard(app, absoluteIndex);
       grid.appendChild(card);
     });
 
-    const placeholders = PAGE_SIZE - slice.length;
-    for (let i = 0; i < placeholders; i += 1) {
-      const filler = document.createElement("div");
-      filler.className = "hidden md:block";
-      grid.appendChild(filler);
+    if (!isMobile) {
+      const placeholders = PAGE_SIZE - slice.length;
+      for (let i = 0; i < placeholders; i += 1) {
+        const filler = document.createElement("div");
+        filler.className = "hidden md:block";
+        grid.appendChild(filler);
+      }
     }
 
     page.appendChild(grid);
     dom.pagesWrapper.appendChild(page);
   }
 
-  dom.pagesWrapper.style.transform = `translateX(-${
-    state.currentPage * 100
-  }%)`;
+  if (isMobile) {
+    dom.pagesWrapper.style.transform = "none";
+    if (dom.gridViewport) {
+      dom.gridViewport.scrollTop = 0;
+    }
+  } else {
+    dom.pagesWrapper.style.transform = `translateX(-${
+      state.currentPage * 100
+    }%)`;
+  }
 }
 
 function createAppCard(app, absoluteIndex) {
@@ -949,16 +990,15 @@ function applyIconFallback(image) {
 function renderPagination() {
   dom.paginationControls.innerHTML = "";
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(state.filteredApps.length / PAGE_SIZE)
-  );
+  const totalPages = getTotalPages();
 
-  if (totalPages <= 1) {
+  if (isMobileLayout() || totalPages <= 1) {
+    dom.paginationControls.classList.add("hidden");
     dom.paginationControls.classList.add("invisible");
     return;
   }
 
+  dom.paginationControls.classList.remove("hidden");
   dom.paginationControls.classList.remove("invisible");
 
   for (let i = 0; i < totalPages; i += 1) {
@@ -987,10 +1027,13 @@ function updateEmptyState() {
 }
 
 function setPage(pageIndex, options = {}) {
-  const totalPages = Math.max(
-    1,
-    Math.ceil(state.filteredApps.length / PAGE_SIZE)
-  );
+  if (isMobileLayout()) {
+    state.currentPage = 0;
+    dom.pagesWrapper.style.transform = "none";
+    return;
+  }
+
+  const totalPages = getTotalPages();
   const clamped = Math.min(Math.max(pageIndex, 0), totalPages - 1);
   if (clamped === state.currentPage) return;
 
@@ -1016,9 +1059,14 @@ function setActiveIndex(index, options = {}) {
 
   if (options.syncPage !== false) {
     if (state.activeIndex >= 0) {
-      const targetPage = Math.floor(clamped / PAGE_SIZE);
+      const pageSize = getEffectivePageSize();
+      const targetPage = Math.floor(clamped / pageSize);
       state.currentPage = targetPage;
-      dom.pagesWrapper.style.transform = `translateX(-${targetPage * 100}%)`;
+      if (isMobileLayout()) {
+        dom.pagesWrapper.style.transform = "none";
+      } else {
+        dom.pagesWrapper.style.transform = `translateX(-${targetPage * 100}%)`;
+      }
       renderPagination();
     }
   }
@@ -1083,6 +1131,25 @@ function openApp(app) {
   if (app.url) {
     window.open(app.url, "_blank", "noopener,noreferrer");
   }
+}
+
+function handleLayoutChange() {
+  state.currentPage = 0;
+
+  if (isMobileLayout()) {
+    dom.pagesWrapper.style.transform = "none";
+  }
+
+  render();
+  if (dom.gridViewport) {
+    dom.gridViewport.scrollTop = 0;
+  }
+}
+
+if (typeof mobileLayoutQuery.addEventListener === "function") {
+  mobileLayoutQuery.addEventListener("change", handleLayoutChange);
+} else if (typeof mobileLayoutQuery.addListener === "function") {
+  mobileLayoutQuery.addListener(handleLayoutChange);
 }
 
 init();
