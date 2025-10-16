@@ -1,9 +1,47 @@
 const APPS_SOURCE = "./apps.sample.json";
-const PAGE_SIZE = 28;
+const DEFAULT_PAGE_SIZE = 28;
+const MIN_PAGE_SIZE = 14;
+const MAX_PAGE_SIZE = 56;
+const PAGE_SIZE_STEP = 7;
 const SCROLL_PAGE_THRESHOLD = 60;
 const DEFAULT_ICON = "./default-icon.svg";
 const SETTINGS_STORAGE_KEY = "launchpad.settings.v1";
+const USER_DATA_STORAGE_KEY = "launchpad.userdata.v1";
 const MOBILE_BREAKPOINT = "(max-width: 640px)";
+
+const BASE_ICON_LIBRARY = [
+  "https://img.icons8.com/ios-filled/100/ffffff/mac-os.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/calendar.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/apple-mail.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/compass.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/note.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/reminders.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/imessage.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/facetime.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/picture.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/apple-music.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/podcast.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/tv.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/apple-maps.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/partly-cloudy-day.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/news.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/opened-folder.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/contacts.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/calculator.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/console.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/settings.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/xcode.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/numbers.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/pages.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/keynote.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/shortcut.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/home-automation.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/real-time-traffic.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/microphone.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/apple-books.png",
+  "https://img.icons8.com/ios-filled/100/ffffff/joystick.png",
+  DEFAULT_ICON,
+];
 
 const PRESET_BACKGROUND_OPTIONS = [
   "./bg-photo-gallery.avif",
@@ -22,13 +60,21 @@ const defaultSettings = {
   hasCompletedSetup: false,
 };
 
+const defaultUserData = {
+  hiddenAppIds: [],
+  customApps: [],
+  pageSize: DEFAULT_PAGE_SIZE,
+};
+
 const state = {
+  catalogApps: [],
   apps: [],
   filteredApps: [],
   searchTerm: "",
   currentPage: 0,
   activeIndex: 0,
   settings: { ...defaultSettings },
+  userData: { ...defaultUserData },
 };
 
 const dom = {
@@ -56,6 +102,24 @@ const dom = {
   overlayValue: document.getElementById("overlay-opacity-value"),
   blurValue: document.getElementById("blur-strength-value"),
   glassValue: document.getElementById("glass-opacity-value"),
+  pageSizeInput: document.getElementById("settings-page-size"),
+  pageSizeValue: document.getElementById("page-size-value"),
+  appVisibilityList: document.getElementById("settings-app-visibility"),
+  appVisibilityEmpty: document.getElementById("settings-app-visibility-empty"),
+  appVisibilitySummary: document.getElementById("app-visibility-summary"),
+  customAppNameInput: document.getElementById("custom-app-name"),
+  customAppUrlInput: document.getElementById("custom-app-url"),
+  customAppDescriptionInput: document.getElementById(
+    "custom-app-description"
+  ),
+  customAppTagsInput: document.getElementById("custom-app-tags"),
+  customAppFeedback: document.getElementById("custom-app-feedback"),
+  customAppSubmit: document.getElementById("custom-app-submit"),
+  customIconOptions: document.querySelector("[data-custom-icon-options]"),
+  customIconCustomFields: document.querySelector(
+    "[data-custom-icon-custom-fields]"
+  ),
+  customIconCustomInput: document.getElementById("custom-app-icon-custom"),
 };
 
 const mobileLayoutQuery = window.matchMedia(MOBILE_BREAKPOINT);
@@ -64,12 +128,17 @@ function isMobileLayout() {
   return mobileLayoutQuery.matches;
 }
 
+function getDesktopPageSize() {
+  return normalizePageSize(state.userData?.pageSize ?? DEFAULT_PAGE_SIZE);
+}
+
 function getTotalPages() {
   if (isMobileLayout()) {
     return 1;
   }
 
-  return Math.max(1, Math.ceil(state.filteredApps.length / PAGE_SIZE));
+  const pageSize = getDesktopPageSize();
+  return Math.max(1, Math.ceil(state.filteredApps.length / pageSize));
 }
 
 function getEffectivePageSize() {
@@ -77,7 +146,7 @@ function getEffectivePageSize() {
     return Math.max(state.filteredApps.length, 1);
   }
 
-  return PAGE_SIZE;
+  return getDesktopPageSize();
 }
 
 function loadSettingsFromStorage() {
@@ -139,6 +208,171 @@ function clampNumber(value, min, max, fallback) {
     return fallback;
   }
   return Math.min(Math.max(number, min), max);
+}
+
+function normalizePageSize(value) {
+  const fallback = defaultUserData.pageSize;
+  const clamped = clampNumber(value, MIN_PAGE_SIZE, MAX_PAGE_SIZE, fallback);
+  const rounded = Number.isFinite(clamped) ? Math.round(clamped) : fallback;
+  if (PAGE_SIZE_STEP <= 1) {
+    return Math.min(Math.max(rounded, MIN_PAGE_SIZE), MAX_PAGE_SIZE);
+  }
+  const stepped = Math.round(rounded / PAGE_SIZE_STEP) * PAGE_SIZE_STEP;
+  return Math.min(
+    Math.max(stepped, MIN_PAGE_SIZE),
+    MAX_PAGE_SIZE
+  );
+}
+
+function loadUserDataFromStorage() {
+  try {
+    const raw = localStorage.getItem(USER_DATA_STORAGE_KEY);
+    if (!raw) {
+      return { ...defaultUserData };
+    }
+    const parsed = JSON.parse(raw);
+    const hiddenAppIds = Array.isArray(parsed.hiddenAppIds)
+      ? parsed.hiddenAppIds
+          .map((id) => (typeof id === "string" ? id.trim() : ""))
+          .filter((id) => id.length > 0)
+      : [];
+    const customApps = Array.isArray(parsed.customApps)
+      ? parsed.customApps.filter((entry) => entry && typeof entry === "object")
+      : [];
+    const pageSize = normalizePageSize(parsed.pageSize);
+    return {
+      hiddenAppIds,
+      customApps,
+      pageSize,
+    };
+  } catch (error) {
+    console.warn("Failed to read user data from storage", error);
+    return { ...defaultUserData };
+  }
+}
+
+function saveUserDataToStorage(data) {
+  try {
+    localStorage.setItem(USER_DATA_STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.warn("Failed to save user data", error);
+  }
+}
+
+function sanitizeHttpUrl(value) {
+  if (typeof value !== "string") return "";
+  const trimmed = value.trim();
+  if (!trimmed || /^javascript:/i.test(trimmed)) return "";
+  if (!/^https?:\/\//i.test(trimmed)) return "";
+  return trimmed;
+}
+
+function sanitizeIconSource(value) {
+  if (typeof value !== "string") return DEFAULT_ICON;
+  const trimmed = value.trim();
+  if (!trimmed || /^javascript:/i.test(trimmed)) return DEFAULT_ICON;
+  if (
+    /^https?:\/\//i.test(trimmed) ||
+    /^data:image\//i.test(trimmed) ||
+    trimmed.startsWith("./") ||
+    trimmed.startsWith("/")
+  ) {
+    return trimmed;
+  }
+  return DEFAULT_ICON;
+}
+
+function sanitizeTagList(tags) {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map((tag) => String(tag ?? "").trim())
+    .filter((tag) => tag.length > 0);
+}
+
+function parseCustomTagString(value) {
+  if (typeof value !== "string") return [];
+  return value
+    .split(",")
+    .map((tag) => tag.trim())
+    .filter((tag) => tag.length > 0);
+}
+
+function sanitizeAppRecord(app, origin) {
+  if (!app || typeof app !== "object") return null;
+  const name = typeof app.name === "string" ? app.name.trim() : "";
+  const description =
+    typeof app.description === "string" ? app.description.trim() : "";
+  const url = sanitizeHttpUrl(app.url);
+  const icon = sanitizeIconSource(app.icon);
+  const tags = sanitizeTagList(app.tags);
+  const id = typeof app.id === "string" ? app.id.trim() : "";
+
+  if (origin === "custom" && (!name || !url)) {
+    return null;
+  }
+
+  return {
+    id,
+    name: name || "Untitled app",
+    description,
+    url,
+    icon,
+    tags,
+    origin,
+  };
+}
+
+function createSlugId(prefix, name) {
+  const baseName = String(name ?? "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const fallback = `${prefix}-${Date.now().toString(36)}`;
+  return baseName ? `${prefix}-${baseName}` : fallback;
+}
+
+function ensureUniqueAppIds(apps) {
+  const seen = new Set();
+  return apps.map((app) => {
+    let baseId =
+      typeof app.id === "string" && app.id.trim().length > 0
+        ? app.id.trim()
+        : createSlugId(app.origin === "custom" ? "custom" : "app", app.name);
+    let uniqueId = baseId;
+    let counter = 2;
+    while (seen.has(uniqueId)) {
+      uniqueId = `${baseId}-${counter}`;
+      counter += 1;
+    }
+    seen.add(uniqueId);
+    return { ...app, id: uniqueId };
+  });
+}
+
+function stripAppForStorage(app) {
+  const { origin, ...rest } = app;
+  return rest;
+}
+
+function dedupeHiddenIds(hiddenIds, apps) {
+  if (!Array.isArray(hiddenIds)) return [];
+  const validIds = new Set(apps.map((app) => app.id));
+  return hiddenIds
+    .map((id) => (typeof id === "string" ? id.trim() : ""))
+    .filter((id) => id.length > 0 && validIds.has(id));
+}
+
+function getIconLibrary() {
+  const icons = new Set(BASE_ICON_LIBRARY);
+  state.catalogApps.forEach((app) => {
+    if (typeof app.icon === "string") {
+      const sanitized = sanitizeIconSource(app.icon);
+      if (sanitized) {
+        icons.add(sanitized);
+      }
+    }
+  });
+  return Array.from(icons);
 }
 
 function hexToRgb(hex) {
@@ -316,6 +550,16 @@ function populateSettingsForm(settings) {
 
   syncBackgroundFieldVisibility(merged.backgroundType);
   updateSettingsIndicators(merged);
+
+  if (dom.pageSizeInput) {
+    const pageSize = getDesktopPageSize();
+    dom.pageSizeInput.value = String(pageSize);
+    updatePageSizeIndicator(pageSize);
+  }
+
+  renderAppVisibilityList();
+  renderCustomIconOptions();
+  updateAppVisibilitySummary();
 }
 
 function syncBackgroundFieldVisibility(backgroundType) {
@@ -402,6 +646,414 @@ function updateSettingsIndicators(settings) {
   }
 }
 
+function updatePageSizeIndicator(value) {
+  if (!dom.pageSizeValue) return;
+  const numeric = Number.parseInt(
+    value ?? dom.pageSizeInput?.value ?? getDesktopPageSize(),
+    10
+  );
+  if (Number.isFinite(numeric)) {
+    dom.pageSizeValue.textContent = `${numeric}`;
+  }
+}
+
+function updateAppVisibilitySummary() {
+  if (!dom.appVisibilitySummary) return;
+  const total = state.catalogApps.length;
+  if (total === 0) {
+    dom.appVisibilitySummary.textContent = "No apps yet";
+    return;
+  }
+  const hidden = state.userData.hiddenAppIds.length;
+  const visible = Math.max(total - hidden, 0);
+  const hiddenSuffix = hidden > 0 ? ` · ${hidden} hidden` : "";
+  dom.appVisibilitySummary.textContent = `Visible ${visible} of ${total}${hiddenSuffix}`;
+}
+
+function renderAppVisibilityList() {
+  if (!dom.appVisibilityList) return;
+  const container = dom.appVisibilityList;
+  container.innerHTML = "";
+
+  const apps = [...state.catalogApps];
+  const hiddenSet = new Set(state.userData.hiddenAppIds);
+
+  if (apps.length === 0) {
+    dom.appVisibilityEmpty?.classList.remove("hidden");
+    updateAppVisibilitySummary();
+    return;
+  }
+
+  dom.appVisibilityEmpty?.classList.add("hidden");
+
+  apps
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
+    .forEach((app) => {
+      const label = document.createElement("label");
+      label.className = [
+        "group",
+        "flex",
+        "items-center",
+        "gap-3",
+        "rounded-2xl",
+        "border",
+        "border-white/10",
+        "bg-white/5",
+        "px-4",
+        "py-3",
+        "text-sm",
+        "text-slate-200",
+        "transition",
+        "hover:border-white/20",
+        "hover:bg-white/10",
+      ].join(" ");
+
+      const checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "h-4 w-4 rounded border-slate-600 text-sky-400 focus:ring-sky-500/50";
+      checkbox.dataset.appId = app.id;
+      checkbox.checked = !hiddenSet.has(app.id);
+      label.appendChild(checkbox);
+
+      const content = document.createElement("div");
+      content.className = "flex flex-1 flex-col overflow-hidden";
+
+      const title = document.createElement("span");
+      title.className = "font-medium text-slate-100 truncate";
+      title.textContent = app.name;
+      content.appendChild(title);
+
+      if (app.description) {
+        const subtitle = document.createElement("span");
+        subtitle.className = "text-xs text-slate-400 truncate";
+        subtitle.textContent = app.description;
+        content.appendChild(subtitle);
+      }
+
+      if (app.tags && app.tags.length > 0) {
+        const tags = document.createElement("span");
+        tags.className = "text-[10px] uppercase tracking-wide text-slate-500 truncate";
+        tags.textContent = app.tags.join(", ");
+        content.appendChild(tags);
+      }
+
+      label.appendChild(content);
+
+      const badge = document.createElement("span");
+      badge.className = "rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400";
+      badge.textContent = app.origin === "custom" ? "Custom" : "Preset";
+      label.appendChild(badge);
+
+      container.appendChild(label);
+    });
+
+  updateAppVisibilitySummary();
+}
+
+function syncCustomIconCustomVisibility(choiceValue) {
+  if (!dom.customIconCustomFields) return;
+  if (choiceValue === "custom") {
+    dom.customIconCustomFields.classList.remove("hidden");
+    dom.customIconCustomInput?.removeAttribute("disabled");
+  } else {
+    dom.customIconCustomFields.classList.add("hidden");
+    dom.customIconCustomInput?.setAttribute("disabled", "true");
+  }
+}
+
+function renderCustomIconOptions(preferredValue) {
+  if (!dom.customIconOptions) return;
+  const container = dom.customIconOptions;
+  const currentSelection = container.querySelector(
+    'input[name="customAppIconChoice"]:checked'
+  );
+  const selectedValue = preferredValue ?? currentSelection?.value ?? null;
+
+  container.innerHTML = "";
+  const icons = getIconLibrary();
+  let hasMatched = false;
+
+  icons.forEach((icon, index) => {
+    const label = document.createElement("label");
+    label.className = [
+      "group",
+      "flex",
+      "cursor-pointer",
+      "flex-col",
+      "items-center",
+      "gap-3",
+      "rounded-2xl",
+      "border",
+      "border-white/10",
+      "bg-white/5",
+      "p-3",
+      "text-xs",
+      "text-slate-200",
+      "transition",
+      "hover:border-white/20",
+      "hover:bg-white/10",
+    ].join(" ");
+
+    const input = document.createElement("input");
+    input.type = "radio";
+    input.name = "customAppIconChoice";
+    input.value = icon;
+    input.className = "peer sr-only";
+    if (!hasMatched && selectedValue === icon) {
+      input.checked = true;
+      hasMatched = true;
+    }
+    label.appendChild(input);
+
+    const preview = document.createElement("span");
+    preview.className = "flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/40 p-3 transition peer-checked:border-sky-400/60 peer-checked:bg-slate-800/60";
+    const image = document.createElement("img");
+    image.src = icon;
+    image.alt = "";
+    image.loading = "lazy";
+    image.className = "h-full w-full object-contain";
+    image.addEventListener("error", () => {
+      image.src = DEFAULT_ICON;
+    });
+    preview.appendChild(image);
+    label.appendChild(preview);
+
+    const caption = document.createElement("span");
+    caption.className = "text-[10px] font-semibold uppercase tracking-wide text-slate-400";
+    caption.textContent = "Preset";
+    label.appendChild(caption);
+
+    container.appendChild(label);
+
+    if (!hasMatched && !selectedValue && index === 0) {
+      input.checked = true;
+      hasMatched = true;
+    }
+  });
+
+  const customLabel = document.createElement("label");
+  customLabel.className = [
+    "group",
+    "flex",
+    "cursor-pointer",
+    "flex-col",
+    "items-center",
+    "gap-3",
+    "rounded-2xl",
+    "border",
+    "border-dashed",
+    "border-white/20",
+    "bg-white/5",
+    "p-3",
+    "text-xs",
+    "text-slate-200",
+    "transition",
+    "hover:border-white/30",
+    "hover:bg-white/10",
+  ].join(" ");
+
+  const customInput = document.createElement("input");
+  customInput.type = "radio";
+  customInput.name = "customAppIconChoice";
+  customInput.value = "custom";
+  customInput.className = "peer sr-only";
+  customLabel.appendChild(customInput);
+
+  const customPreview = document.createElement("div");
+  customPreview.className = "flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/40 text-[10px] uppercase tracking-wide text-slate-400 transition peer-checked:border-sky-400/60 peer-checked:text-sky-200";
+  customPreview.textContent = "Custom";
+  customLabel.appendChild(customPreview);
+
+  const customCaption = document.createElement("span");
+  customCaption.className = "text-[10px] font-semibold uppercase tracking-wide text-slate-400";
+  customCaption.textContent = "Paste link";
+  customLabel.appendChild(customCaption);
+
+  container.appendChild(customLabel);
+
+  if (!hasMatched && selectedValue === "custom") {
+    customInput.checked = true;
+    hasMatched = true;
+  }
+
+  if (!hasMatched && icons.length === 0) {
+    customInput.checked = true;
+    hasMatched = true;
+  }
+
+  if (!hasMatched && icons.length > 0) {
+    const first = container.querySelector('input[name="customAppIconChoice"]');
+    if (first && first instanceof HTMLInputElement) {
+      first.checked = true;
+    }
+  }
+
+  const finalSelection = container.querySelector(
+    'input[name="customAppIconChoice"]:checked'
+  );
+  syncCustomIconCustomVisibility(finalSelection?.value ?? "custom");
+}
+
+function showCustomAppFeedback(message, variant = "info") {
+  if (!dom.customAppFeedback) return;
+  dom.customAppFeedback.textContent = message;
+  dom.customAppFeedback.classList.remove(
+    "text-emerald-400",
+    "text-rose-400",
+    "text-slate-500"
+  );
+  if (variant === "success") {
+    dom.customAppFeedback.classList.add("text-emerald-400");
+  } else if (variant === "error") {
+    dom.customAppFeedback.classList.add("text-rose-400");
+  } else {
+    dom.customAppFeedback.classList.add("text-slate-500");
+  }
+}
+
+function resetCustomAppForm() {
+  dom.customAppNameInput && (dom.customAppNameInput.value = "");
+  dom.customAppUrlInput && (dom.customAppUrlInput.value = "");
+  dom.customAppDescriptionInput && (dom.customAppDescriptionInput.value = "");
+  dom.customAppTagsInput && (dom.customAppTagsInput.value = "");
+  dom.customIconCustomInput && (dom.customIconCustomInput.value = "");
+  renderCustomIconOptions();
+}
+
+function getSelectedCustomIconChoice() {
+  if (!dom.customIconOptions) return null;
+  const selected = dom.customIconOptions.querySelector(
+    'input[name="customAppIconChoice"]:checked'
+  );
+  if (selected instanceof HTMLInputElement) {
+    return selected.value;
+  }
+  return null;
+}
+
+function handleAppVisibilityChange(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+  const appId = target.dataset.appId;
+  if (!appId) return;
+
+  const hiddenSet = new Set(state.userData.hiddenAppIds);
+  if (target.checked) {
+    hiddenSet.delete(appId);
+  } else {
+    hiddenSet.add(appId);
+  }
+
+  state.userData.hiddenAppIds = Array.from(hiddenSet);
+  saveUserDataToStorage(state.userData);
+  updateVisibleApps();
+  applyFilter(state.searchTerm ?? "");
+  renderAppVisibilityList();
+}
+
+function handleCustomIconOptionChange(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+  if (target.name !== "customAppIconChoice") return;
+  syncCustomIconCustomVisibility(target.value);
+  if (target.value === "custom") {
+    window.setTimeout(() => {
+      dom.customIconCustomInput?.focus({ preventScroll: true });
+    }, 0);
+  }
+}
+
+function handleAddCustomApp() {
+  if (!dom.customAppNameInput || !dom.customAppUrlInput) return;
+
+  const name = dom.customAppNameInput.value.trim();
+  const url = sanitizeHttpUrl(dom.customAppUrlInput.value);
+  const description = dom.customAppDescriptionInput?.value?.trim() ?? "";
+  const tags = parseCustomTagString(dom.customAppTagsInput?.value ?? "");
+  const iconChoice = getSelectedCustomIconChoice();
+
+  if (!name) {
+    showCustomAppFeedback("Please enter a name for the app.", "error");
+    dom.customAppNameInput.focus({ preventScroll: true });
+    return;
+  }
+
+  if (!url) {
+    showCustomAppFeedback(
+      "Please enter a valid link that starts with https://",
+      "error"
+    );
+    dom.customAppUrlInput.focus({ preventScroll: true });
+    return;
+  }
+
+  let icon = DEFAULT_ICON;
+  if (iconChoice === "custom") {
+    const customValue = dom.customIconCustomInput?.value ?? "";
+    if (!customValue.trim()) {
+      showCustomAppFeedback("Paste an icon URL or pick a preset.", "error");
+      dom.customIconCustomInput?.focus({ preventScroll: true });
+      return;
+    }
+    icon = sanitizeIconSource(customValue);
+    const normalized = customValue.trim();
+    const looksRelative = normalized.startsWith("./") || normalized.startsWith("/");
+    const looksHttp = /^https?:\/\//i.test(normalized);
+    if (icon === DEFAULT_ICON && !looksHttp && !looksRelative) {
+      showCustomAppFeedback("Please use a valid image URL.", "error");
+      dom.customIconCustomInput?.focus({ preventScroll: true });
+      return;
+    }
+  } else if (typeof iconChoice === "string") {
+    icon = sanitizeIconSource(iconChoice);
+  }
+
+  const existingIds = new Set(state.catalogApps.map((app) => app.id));
+  const baseId = createSlugId("custom", name);
+  let newId = baseId;
+  let counter = 2;
+  while (existingIds.has(newId)) {
+    newId = `${baseId}-${counter}`;
+    counter += 1;
+  }
+
+  const newApp = {
+    id: newId,
+    name,
+    description,
+    url,
+    icon,
+    tags,
+    origin: "custom",
+  };
+
+  state.catalogApps = [...state.catalogApps, newApp];
+  state.userData.customApps = [
+    ...state.userData.customApps,
+    stripAppForStorage(newApp),
+  ];
+  state.userData.hiddenAppIds = dedupeHiddenIds(
+    state.userData.hiddenAppIds,
+    state.catalogApps
+  );
+  saveUserDataToStorage(state.userData);
+
+  updateVisibleApps();
+  applyFilter(state.searchTerm ?? "");
+  renderAppVisibilityList();
+  updateAppVisibilitySummary();
+
+  resetCustomAppForm();
+  showCustomAppFeedback("App added to your launchpad.", "success");
+}
+
+function refreshAppManagementUI() {
+  renderAppVisibilityList();
+  renderCustomIconOptions();
+  updateAppVisibilitySummary();
+  updatePageSizeIndicator();
+}
+
 function setupSettingsUI() {
   if (!dom.settingsForm) return;
 
@@ -476,6 +1128,19 @@ function setupSettingsUI() {
     });
   }
 
+  if (dom.pageSizeInput) {
+    dom.pageSizeInput.addEventListener("input", (event) => {
+      updatePageSizeIndicator(event.target.value);
+    });
+  }
+
+  dom.appVisibilityList?.addEventListener("change", handleAppVisibilityChange);
+  dom.customIconOptions?.addEventListener("change", handleCustomIconOptionChange);
+  dom.customAppSubmit?.addEventListener("click", (event) => {
+    event.preventDefault();
+    handleAddCustomApp();
+  });
+
   dom.openSettingsButton?.addEventListener("click", () => {
     showSettingsModal({ autofocus: true });
   });
@@ -498,6 +1163,8 @@ function setupSettingsUI() {
 function showSettingsModal(options = {}) {
   if (!dom.settingsModal) return;
   populateSettingsForm(state.settings);
+  resetCustomAppForm();
+  showCustomAppFeedback("", "info");
   dom.settingsModal.classList.remove("hidden");
   dom.settingsModal.classList.add("flex");
   dom.settingsModal.setAttribute("aria-hidden", "false");
@@ -599,15 +1266,29 @@ function handleSettingsSubmit() {
   state.settings = nextSettings;
   applySettings(state.settings);
   saveSettingsToStorage(state.settings);
+  const pageSize = normalizePageSize(formData.get("pageSize"));
+  state.userData = {
+    ...state.userData,
+    pageSize,
+  };
+  saveUserDataToStorage(state.userData);
+  updateVisibleApps();
+  applyFilter(state.searchTerm ?? "");
+  updatePageSizeIndicator(pageSize);
   closeSettingsModal({ markCompleted: true });
 }
 
 async function init() {
   state.settings = loadSettingsFromStorage();
+  state.userData = loadUserDataFromStorage();
+  state.userData.pageSize = normalizePageSize(state.userData.pageSize);
+  saveUserDataToStorage(state.userData);
   applySettings(state.settings);
   setupSettingsUI();
 
   await loadApps();
+  updateVisibleApps();
+  refreshAppManagementUI();
   attachGlobalListeners();
   applyFilter("");
   state.activeIndex = -1;
@@ -620,15 +1301,37 @@ async function init() {
 async function loadApps() {
   showLoadingScreen();
 
+  let remoteData = [];
   try {
     const response = await fetch(APPS_SOURCE, { cache: "no-store" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
-    state.apps = Array.isArray(data) ? data : [];
+    remoteData = Array.isArray(data) ? data : [];
   } catch (error) {
     console.error("Failed to load apps.json:", error);
-    state.apps = [];
+    remoteData = [];
   }
+
+  const remoteApps = remoteData
+    .map((app) => sanitizeAppRecord(app, "preset"))
+    .filter(Boolean);
+
+  const storedCustomApps = (state.userData.customApps ?? [])
+    .map((app) => sanitizeAppRecord(app, "custom"))
+    .filter(Boolean);
+
+  const combined = ensureUniqueAppIds([...remoteApps, ...storedCustomApps]);
+
+  state.catalogApps = combined;
+  state.userData.customApps = combined
+    .filter((app) => app.origin === "custom")
+    .map(stripAppForStorage);
+  state.userData.hiddenAppIds = dedupeHiddenIds(
+    state.userData.hiddenAppIds,
+    combined
+  );
+  state.userData.pageSize = normalizePageSize(state.userData.pageSize);
+  saveUserDataToStorage(state.userData);
 }
 
 function showLoadingScreen() {
@@ -842,6 +1545,11 @@ function applyFilter(term) {
   render();
 }
 
+function updateVisibleApps() {
+  const hiddenSet = new Set(state.userData.hiddenAppIds);
+  state.apps = state.catalogApps.filter((app) => !hiddenSet.has(app.id));
+}
+
 function render() {
   renderPages();
   renderPagination();
@@ -871,7 +1579,8 @@ function renderPages() {
       ? "grid w-full grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
       : "grid h-full w-full grid-cols-3 gap-6 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7";
 
-    const pageSize = isMobile ? state.filteredApps.length : PAGE_SIZE;
+    const desktopPageSize = getDesktopPageSize();
+    const pageSize = isMobile ? state.filteredApps.length : desktopPageSize;
     const start = isMobile ? 0 : pageIndex * pageSize;
     const end = isMobile ? state.filteredApps.length : start + pageSize;
     const slice = state.filteredApps.slice(start, end);
@@ -883,7 +1592,7 @@ function renderPages() {
     });
 
     if (!isMobile) {
-      const placeholders = PAGE_SIZE - slice.length;
+      const placeholders = Math.max(desktopPageSize - slice.length, 0);
       for (let i = 0; i < placeholders; i += 1) {
         const filler = document.createElement("div");
         filler.className = "hidden md:block";
@@ -976,9 +1685,7 @@ function removeCharacterFromSearch(mode) {
 }
 
 function resolveIconSource(source) {
-  if (typeof source !== "string") return DEFAULT_ICON;
-  const trimmed = source.trim();
-  return trimmed.length ? trimmed : DEFAULT_ICON;
+  return sanitizeIconSource(source);
 }
 
 function applyIconFallback(image) {
@@ -1042,7 +1749,7 @@ function setPage(pageIndex, options = {}) {
   renderPagination();
 
   if (!options.skipActiveSync && state.activeIndex !== -1) {
-    const firstIndex = clamped * PAGE_SIZE;
+    const firstIndex = clamped * getDesktopPageSize();
     setActiveIndex(firstIndex, { syncPage: false });
   }
 }

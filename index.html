@@ -6,6 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Launchpad Gallery</title>
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+  <link rel="icon" type="image/svg+xml" href="/default-icon.svg" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -268,13 +269,13 @@
                 <div class="flex h-20 w-full items-center justify-center rounded-xl border border-white/10 bg-slate-900/40 text-xs uppercase tracking-wide text-slate-400 transition peer-checked:border-sky-400/40 peer-checked:text-sky-200">
                   Custom link
                 </div>
-                <div class="text-xs text-slate-400">Paste any image or gradient URL.</div>
+                <div class="text-xs text-slate-400">Paste any image or gradient reference.</div>
               </label>
             </div>
             <div data-background-image-custom-fields class="hidden space-y-2">
               <label for="settings-background-image-custom"
-                class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Custom image URL</label>
-              <input id="settings-background-image-custom" name="backgroundImageCustom" type="url" inputmode="url" data-autofocus
+                class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Custom image source</label>
+              <input id="settings-background-image-custom" name="backgroundImageCustom" type="text" data-autofocus
                 class="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
                 placeholder="e.g. https://images.unsplash.com/..." />
             </div>
@@ -323,6 +324,78 @@
               class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Glass tint color</label>
             <input id="settings-glass-color" name="glassTintColor" type="color"
               class="h-12 w-24 cursor-pointer rounded-2xl border border-white/10 bg-transparent p-1" />
+          </div>
+        </section>
+
+        <section class="space-y-4">
+          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Layout</h3>
+          <label class="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+            <div class="flex items-center justify-between text-xs uppercase tracking-wide text-slate-400">
+              <span>Apps per page (desktop)</span>
+              <span id="page-size-value" class="font-semibold text-slate-100">28</span>
+            </div>
+            <input id="settings-page-size" name="pageSize" type="range" min="14" max="56" step="7"
+              class="w-full accent-sky-400" />
+            <p class="text-xs text-slate-500">Mobile devices always show the full list.</p>
+          </label>
+        </section>
+
+        <section class="space-y-4">
+          <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+            <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">App library</h3>
+            <span id="app-visibility-summary"
+              class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500"></span>
+          </div>
+          <div id="settings-app-visibility" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
+          <p id="settings-app-visibility-empty" class="hidden text-xs text-slate-500">No apps loaded yet.</p>
+        </section>
+
+        <section class="space-y-4">
+          <h3 class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Add your own app</h3>
+          <div class="space-y-4 rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-200">
+            <div class="grid gap-3 sm:grid-cols-2">
+              <label class="flex flex-col gap-2">
+                <span class="text-xs uppercase tracking-wide text-slate-400">App name</span>
+                <input id="custom-app-name" type="text" autocomplete="off"
+                  class="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+                  placeholder="My Dashboard" />
+              </label>
+              <label class="flex flex-col gap-2">
+                <span class="text-xs uppercase tracking-wide text-slate-400">Link</span>
+                <input id="custom-app-url" type="url" inputmode="url"
+                  class="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+                  placeholder="https://example.com" />
+              </label>
+            </div>
+            <label class="flex flex-col gap-2">
+              <span class="text-xs uppercase tracking-wide text-slate-400">Short description</span>
+              <textarea id="custom-app-description" rows="2"
+                class="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+                placeholder="Optional"></textarea>
+            </label>
+            <label class="flex flex-col gap-2">
+              <span class="text-xs uppercase tracking-wide text-slate-400">Tags</span>
+              <input id="custom-app-tags" type="text"
+                class="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+                placeholder="productivity, ai" />
+            </label>
+            <div class="space-y-3">
+              <span class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">App icon</span>
+              <div data-custom-icon-options class="grid grid-cols-4 gap-3 sm:grid-cols-6"></div>
+              <div data-custom-icon-custom-fields class="hidden space-y-2">
+                <label for="custom-app-icon-custom"
+                  class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Custom icon URL</label>
+                <input id="custom-app-icon-custom" type="url" inputmode="url"
+                  class="w-full rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+                  placeholder="https://example.com/icon.png" />
+              </div>
+            </div>
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <p id="custom-app-feedback" class="text-xs text-slate-500"></p>
+              <button type="button" id="custom-app-submit"
+                class="rounded-2xl bg-sky-500/80 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50">Add
+                app</button>
+            </div>
           </div>
         </section>
 
