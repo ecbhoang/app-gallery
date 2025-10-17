@@ -195,10 +195,10 @@
   </main>
 
   <div id="settings-modal"
-    class="fixed inset-0 z-[60] hidden flex bg-slate-950/70 backdrop-blur-sm sm:items-center sm:justify-center"
+    class="fixed inset-0 z-[60] hidden flex overflow-y-auto bg-slate-950/70 px-4 py-6 backdrop-blur-sm sm:items-center sm:justify-center sm:px-8 sm:py-12"
     aria-hidden="true" role="dialog" aria-modal="true">
     <div
-      class="flex h-full w-full max-w-2xl flex-col overflow-hidden rounded-none border border-white/10 bg-slate-900/90 text-slate-100 shadow-2xl backdrop-blur-xl sm:h-auto sm:rounded-[28px] sm:p-0 sm:shadow-2xl/80">
+      class="flex h-full w-full max-w-2xl flex-col overflow-hidden rounded-none border border-white/10 bg-slate-900/90 text-slate-100 shadow-2xl backdrop-blur-xl sm:h-auto sm:max-h-[90vh] sm:rounded-[32px] sm:p-0 sm:shadow-2xl/80">
       <div
         class="flex items-start justify-between gap-4 border-b border-white/5 bg-slate-900/95 px-6 py-5 sm:sticky sm:top-0 sm:z-10 sm:px-8">
         <div class="space-y-1">
@@ -426,8 +426,34 @@
                   <span id="app-visibility-summary"
                     class="text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500"></span>
                 </div>
+                <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div class="relative w-full lg:max-w-xs">
+                    <svg class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" viewBox="0 0 20 20"
+                      fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <path d="m14 14-3.5-3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" />
+                      <circle cx="8.5" cy="8.5" r="3.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                        stroke-linejoin="round" />
+                    </svg>
+                    <input id="app-visibility-filter" type="search" inputmode="search" autocomplete="off"
+                      placeholder="Search installed apps"
+                      class="w-full rounded-2xl border border-white/10 bg-slate-900/40 py-2.5 pl-10 pr-4 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+                      aria-label="Search apps by name, description, or tags" />
+                  </div>
+                  <div data-app-visibility-actions
+                    class="flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-400">
+                    <button type="button" data-visibility-action="show-all"
+                      class="rounded-full border border-white/10 px-3 py-1 text-slate-300 transition hover:border-sky-400/40 hover:bg-sky-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label="Show all apps">Show all</button>
+                    <button type="button" data-visibility-action="hide-all"
+                      class="rounded-full border border-white/10 px-3 py-1 text-slate-300 transition hover:border-rose-400/40 hover:bg-rose-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-400/40 disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label="Hide all apps">Hide all</button>
+                    <button type="button" data-visibility-action="invert"
+                      class="rounded-full border border-white/10 px-3 py-1 text-slate-300 transition hover:border-amber-400/40 hover:bg-amber-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/40 disabled:cursor-not-allowed disabled:opacity-40"
+                      aria-label="Invert visibility for all apps">Invert</button>
+                  </div>
+                </div>
                 <div id="settings-app-visibility" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3"></div>
-                <p id="settings-app-visibility-empty" class="hidden text-xs text-slate-500">No apps loaded yet.</p>
+                <p id="settings-app-visibility-empty" class="hidden text-xs text-slate-500">No apps to manage yet.</p>
               </div>
             </details>
 
