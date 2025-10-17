@@ -1158,6 +1158,20 @@ function setupSettingsUI() {
       closeSettingsModal({ markCompleted: true });
     }
   });
+
+  if (typeof mobileLayoutQuery.addEventListener === "function") {
+    mobileLayoutQuery.addEventListener("change", () => {
+      if (isSettingsModalOpen()) {
+        prepareSettingsPanelsForLayout();
+      }
+    });
+  } else if (typeof mobileLayoutQuery.addListener === "function") {
+    mobileLayoutQuery.addListener(() => {
+      if (isSettingsModalOpen()) {
+        prepareSettingsPanelsForLayout();
+      }
+    });
+  }
 }
 
 function showSettingsModal(options = {}) {
@@ -1169,6 +1183,7 @@ function showSettingsModal(options = {}) {
   dom.settingsModal.classList.add("flex");
   dom.settingsModal.setAttribute("aria-hidden", "false");
   document.body.classList.add("overflow-hidden");
+  prepareSettingsPanelsForLayout();
 
   if (options.autofocus !== false) {
     window.setTimeout(() => {
@@ -1189,6 +1204,32 @@ function showSettingsModal(options = {}) {
       target?.focus({ preventScroll: true });
     }, 0);
   }
+}
+
+function getSettingsPanels() {
+  if (!dom.settingsForm) return [];
+  return Array.from(
+    dom.settingsForm.querySelectorAll("[data-settings-panel]")
+  );
+}
+
+function prepareSettingsPanelsForLayout() {
+  const panels = getSettingsPanels();
+  const preferCondensed = isMobileLayout();
+
+  panels.forEach((panel) => {
+    if (!(panel instanceof HTMLDetailsElement)) return;
+    if (!preferCondensed) {
+      panel.setAttribute("open", "");
+      return;
+    }
+
+    if (panel.hasAttribute("data-open-mobile")) {
+      panel.setAttribute("open", "");
+    } else {
+      panel.removeAttribute("open");
+    }
+  });
 }
 
 function closeSettingsModal(options = {}) {
@@ -1857,6 +1898,16 @@ if (typeof mobileLayoutQuery.addEventListener === "function") {
   mobileLayoutQuery.addEventListener("change", handleLayoutChange);
 } else if (typeof mobileLayoutQuery.addListener === "function") {
   mobileLayoutQuery.addListener(handleLayoutChange);
+}
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("./service-worker.js")
+      .catch((error) => {
+        console.warn("Service worker registration failed", error);
+      });
+  });
 }
 
 init();
