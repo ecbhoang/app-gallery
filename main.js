@@ -75,6 +75,7 @@ const state = {
   activeIndex: 0,
   settings: { ...defaultSettings },
   userData: { ...defaultUserData },
+  appVisibilityFilter: "",
 };
 
 const dom = {
@@ -107,6 +108,10 @@ const dom = {
   appVisibilityList: document.getElementById("settings-app-visibility"),
   appVisibilityEmpty: document.getElementById("settings-app-visibility-empty"),
   appVisibilitySummary: document.getElementById("app-visibility-summary"),
+  appVisibilityFilterInput: document.getElementById("app-visibility-filter"),
+  appVisibilityActions: document.querySelector(
+    "[data-app-visibility-actions]"
+  ),
   customAppNameInput: document.getElementById("custom-app-name"),
   customAppUrlInput: document.getElementById("custom-app-url"),
   customAppDescriptionInput: document.getElementById(
@@ -557,6 +562,10 @@ function populateSettingsForm(settings) {
     updatePageSizeIndicator(pageSize);
   }
 
+  if (dom.appVisibilityFilterInput) {
+    dom.appVisibilityFilterInput.value = state.appVisibilityFilter ?? "";
+  }
+
   renderAppVisibilityList();
   renderCustomIconOptions();
   updateAppVisibilitySummary();
@@ -662,12 +671,53 @@ function updateAppVisibilitySummary() {
   const total = state.catalogApps.length;
   if (total === 0) {
     dom.appVisibilitySummary.textContent = "No apps yet";
+    syncAppVisibilityBulkActions({ total, hidden: 0 });
     return;
   }
   const hidden = state.userData.hiddenAppIds.length;
   const visible = Math.max(total - hidden, 0);
   const hiddenSuffix = hidden > 0 ? ` · ${hidden} hidden` : "";
   dom.appVisibilitySummary.textContent = `Visible ${visible} of ${total}${hiddenSuffix}`;
+  syncAppVisibilityBulkActions({ total, hidden });
+}
+
+function syncAppVisibilityBulkActions({ total, hidden }) {
+  if (!dom.appVisibilityActions) return;
+  const showAllButton = dom.appVisibilityActions.querySelector(
+    'button[data-visibility-action="show-all"]'
+  );
+  const hideAllButton = dom.appVisibilityActions.querySelector(
+    'button[data-visibility-action="hide-all"]'
+  );
+  const invertButton = dom.appVisibilityActions.querySelector(
+    'button[data-visibility-action="invert"]'
+  );
+
+  const noneHidden = hidden === 0;
+  const allHidden = total > 0 && hidden === total;
+  const noApps = total === 0;
+
+  if (showAllButton) {
+    showAllButton.disabled = noneHidden || noApps;
+    showAllButton.setAttribute(
+      "aria-disabled",
+      showAllButton.disabled ? "true" : "false"
+    );
+  }
+  if (hideAllButton) {
+    hideAllButton.disabled = allHidden || noApps;
+    hideAllButton.setAttribute(
+      "aria-disabled",
+      hideAllButton.disabled ? "true" : "false"
+    );
+  }
+  if (invertButton) {
+    invertButton.disabled = noApps;
+    invertButton.setAttribute(
+      "aria-disabled",
+      invertButton.disabled ? "true" : "false"
+    );
+  }
 }
 
 function renderAppVisibilityList() {
@@ -675,79 +725,203 @@ function renderAppVisibilityList() {
   const container = dom.appVisibilityList;
   container.innerHTML = "";
 
-  const apps = [...state.catalogApps];
   const hiddenSet = new Set(state.userData.hiddenAppIds);
+  const filter = (state.appVisibilityFilter ?? "").trim().toLowerCase();
 
-  if (apps.length === 0) {
-    dom.appVisibilityEmpty?.classList.remove("hidden");
+  const sortedApps = [...state.catalogApps].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+  );
+
+  const filteredApps = sortedApps.filter((app) => {
+    if (!filter) return true;
+    const haystackParts = [app.name ?? "", app.description ?? ""];
+    if (Array.isArray(app.tags)) {
+      haystackParts.push(...app.tags);
+    }
+    return haystackParts
+      .join(" ")
+      .toLowerCase()
+      .includes(filter);
+  });
+
+  if (sortedApps.length === 0 || filteredApps.length === 0) {
+    if (dom.appVisibilityEmpty) {
+      dom.appVisibilityEmpty.textContent = sortedApps.length
+        ? "No apps match your search."
+        : "No apps to manage yet.";
+      dom.appVisibilityEmpty.classList.remove("hidden");
+    }
     updateAppVisibilitySummary();
     return;
   }
 
-  dom.appVisibilityEmpty?.classList.add("hidden");
+  if (dom.appVisibilityEmpty) {
+    dom.appVisibilityEmpty.classList.add("hidden");
+    dom.appVisibilityEmpty.textContent = "No apps to manage yet.";
+  }
 
-  apps
-    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" }))
-    .forEach((app) => {
-      const label = document.createElement("label");
-      label.className = [
-        "group",
-        "flex",
-        "items-center",
-        "gap-3",
-        "rounded-2xl",
-        "border",
-        "border-white/10",
-        "bg-white/5",
-        "px-4",
-        "py-3",
-        "text-sm",
-        "text-slate-200",
-        "transition",
-        "hover:border-white/20",
-        "hover:bg-white/10",
-      ].join(" ");
+  filteredApps.forEach((app) => {
+    const isHidden = hiddenSet.has(app.id);
 
-      const checkbox = document.createElement("input");
-      checkbox.type = "checkbox";
-      checkbox.className = "h-4 w-4 rounded border-slate-600 text-sky-400 focus:ring-sky-500/50";
-      checkbox.dataset.appId = app.id;
-      checkbox.checked = !hiddenSet.has(app.id);
-      label.appendChild(checkbox);
+    const label = document.createElement("label");
+    label.className = [
+      "group",
+      "relative",
+      "flex",
+      "cursor-pointer",
+      "flex-col",
+      "gap-3",
+      "rounded-2xl",
+      "border",
+      "px-4",
+      "py-4",
+      "transition",
+      "focus-within:ring-2",
+      "focus-within:ring-sky-400/40",
+      "hover:border-sky-400/40",
+      "hover:bg-white/10",
+      isHidden ? "border-white/10 bg-slate-900/40 opacity-70" : "border-white/20 bg-white/10 shadow-lg shadow-sky-500/10",
+    ].join(" ");
+    label.dataset.visibility = isHidden ? "hidden" : "visible";
+    label.title = isHidden
+      ? "Hidden - click to show this app"
+      : "Visible - click to hide this app";
 
-      const content = document.createElement("div");
-      content.className = "flex flex-1 flex-col overflow-hidden";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "peer sr-only";
+    checkbox.dataset.appId = app.id;
+    checkbox.checked = !isHidden;
+    label.appendChild(checkbox);
 
-      const title = document.createElement("span");
-      title.className = "font-medium text-slate-100 truncate";
-      title.textContent = app.name;
-      content.appendChild(title);
+    const indicator = document.createElement("span");
+    indicator.className = [
+      "pointer-events-none",
+      "absolute",
+      "right-3",
+      "top-3",
+      "flex",
+      "items-center",
+      "gap-1",
+      "rounded-full",
+      "border",
+      "px-2",
+      "py-1",
+      "text-[10px]",
+      "font-semibold",
+      "uppercase",
+      "tracking-[0.24em]",
+      isHidden
+        ? "border-rose-400/40 bg-rose-500/10 text-rose-200"
+        : "border-emerald-400/40 bg-emerald-500/10 text-emerald-200",
+    ].join(" ");
+    indicator.textContent = isHidden ? "Hidden" : "Shown";
+    label.appendChild(indicator);
 
-      if (app.description) {
-        const subtitle = document.createElement("span");
-        subtitle.className = "text-xs text-slate-400 truncate";
-        subtitle.textContent = app.description;
-        content.appendChild(subtitle);
-      }
+    const header = document.createElement("div");
+    header.className = "flex items-center gap-3";
 
-      if (app.tags && app.tags.length > 0) {
-        const tags = document.createElement("span");
-        tags.className = "text-[10px] uppercase tracking-wide text-slate-500 truncate";
-        tags.textContent = app.tags.join(", ");
-        content.appendChild(tags);
-      }
+    const iconWrapper = document.createElement("span");
+    iconWrapper.className = "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-900/50 shadow-inner shadow-black/20";
 
-      label.appendChild(content);
-
-      const badge = document.createElement("span");
-      badge.className = "rounded-full bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-400";
-      badge.textContent = app.origin === "custom" ? "Custom" : "Preset";
-      label.appendChild(badge);
-
-      container.appendChild(label);
+    const icon = document.createElement("img");
+    icon.src = sanitizeIconSource(app.icon) || DEFAULT_ICON;
+    icon.alt = "";
+    icon.loading = "lazy";
+    icon.className = "h-8 w-8 object-contain";
+    icon.addEventListener("error", () => {
+      icon.src = DEFAULT_ICON;
     });
+    iconWrapper.appendChild(icon);
+    header.appendChild(iconWrapper);
+
+    const content = document.createElement("div");
+    content.className = "flex min-w-0 flex-1 flex-col gap-1";
+
+    const title = document.createElement("span");
+    title.className = "truncate text-sm font-semibold text-slate-100";
+    title.textContent = app.name;
+    content.appendChild(title);
+
+    if (app.description) {
+      const subtitle = document.createElement("span");
+      subtitle.className = "truncate text-xs text-slate-400";
+      subtitle.textContent = app.description;
+      content.appendChild(subtitle);
+    }
+
+    if (Array.isArray(app.tags) && app.tags.length > 0) {
+      const tags = document.createElement("span");
+      tags.className = "truncate text-[10px] uppercase tracking-[0.24em] text-slate-500";
+      tags.textContent = app.tags.join(" · ");
+      content.appendChild(tags);
+    }
+
+    header.appendChild(content);
+    label.appendChild(header);
+
+    const footer = document.createElement("div");
+    footer.className = "flex items-center justify-between text-[10px] uppercase tracking-[0.24em] text-slate-500";
+
+    const origin = document.createElement("span");
+    origin.textContent = app.origin === "custom" ? "Custom app" : "Preset";
+    footer.appendChild(origin);
+
+    const hint = document.createElement("span");
+    hint.className = "text-slate-400";
+    hint.textContent = "Toggle visibility";
+    footer.appendChild(hint);
+
+    label.appendChild(footer);
+
+    container.appendChild(label);
+  });
 
   updateAppVisibilitySummary();
+}
+
+function handleAppVisibilityFilterInput(event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) return;
+  state.appVisibilityFilter = target.value;
+  renderAppVisibilityList();
+}
+
+function handleAppVisibilityAction(event) {
+  const origin = event.target;
+  if (!(origin instanceof HTMLElement)) return;
+  const button = origin.closest('button[data-visibility-action]');
+  if (!(button instanceof HTMLButtonElement)) return;
+
+  const action = button.dataset.visibilityAction;
+  if (!action || state.catalogApps.length === 0) {
+    return;
+  }
+
+  if (action === "show-all") {
+    state.userData.hiddenAppIds = [];
+  } else if (action === "hide-all") {
+    state.userData.hiddenAppIds = dedupeHiddenIds(
+      state.catalogApps.map((app) => app.id),
+      state.catalogApps
+    );
+  } else if (action === "invert") {
+    const hiddenSet = new Set(state.userData.hiddenAppIds);
+    const nextHidden = state.catalogApps
+      .filter((app) => !hiddenSet.has(app.id))
+      .map((app) => app.id);
+    state.userData.hiddenAppIds = dedupeHiddenIds(
+      nextHidden,
+      state.catalogApps
+    );
+  } else {
+    return;
+  }
+
+  saveUserDataToStorage(state.userData);
+  updateVisibleApps();
+  applyFilter(state.searchTerm ?? "");
+  renderAppVisibilityList();
 }
 
 function syncCustomIconCustomVisibility(choiceValue) {
@@ -1135,6 +1309,18 @@ function setupSettingsUI() {
   }
 
   dom.appVisibilityList?.addEventListener("change", handleAppVisibilityChange);
+  dom.appVisibilityFilterInput?.addEventListener(
+    "input",
+    handleAppVisibilityFilterInput
+  );
+  dom.appVisibilityFilterInput?.addEventListener(
+    "search",
+    handleAppVisibilityFilterInput
+  );
+  dom.appVisibilityActions?.addEventListener(
+    "click",
+    handleAppVisibilityAction
+  );
   dom.customIconOptions?.addEventListener("change", handleCustomIconOptionChange);
   dom.customAppSubmit?.addEventListener("click", (event) => {
     event.preventDefault();
@@ -1238,6 +1424,10 @@ function closeSettingsModal(options = {}) {
   dom.settingsModal.classList.remove("flex");
   dom.settingsModal.setAttribute("aria-hidden", "true");
   document.body.classList.remove("overflow-hidden");
+  state.appVisibilityFilter = "";
+  if (dom.appVisibilityFilterInput) {
+    dom.appVisibilityFilterInput.value = "";
+  }
   populateSettingsForm(state.settings);
 
   if (options.markCompleted) {
