@@ -198,7 +198,7 @@
     class="fixed inset-0 z-[60] hidden flex bg-slate-950/70 px-4 py-6 backdrop-blur-sm sm:px-8 sm:py-10 lg:px-0 lg:py-0"
     aria-hidden="true" role="dialog" aria-modal="true">
     <div
-      class="flex h-full w-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-slate-900/95 text-slate-100 shadow-2xl backdrop-blur-xl lg:overflow-visible lg:rounded-none lg:border-none">
+      class="flex h-full w-full flex-col overflow-hidden rounded-[28px] border border-white/10 bg-slate-900/95 text-slate-100 shadow-2xl backdrop-blur-xl lg:rounded-none lg:border-none">
       <div class="border-b border-white/5 bg-slate-900/95 px-6 py-6 sm:px-10 sm:py-8">
         <div class="flex items-start justify-between gap-4">
           <div class="space-y-1">
@@ -215,12 +215,37 @@
             </svg>
           </button>
         </div>
+        <div class="mt-6 grid gap-4 sm:grid-cols-2" id="settings-section-overview">
+          <div
+            class="flex items-center gap-4 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-4 shadow-inner shadow-white/5">
+            <span
+              class="flex h-12 w-12 items-center justify-center rounded-full bg-sky-500/20 text-sm font-semibold text-sky-200">ML</span>
+            <div class="text-sm">
+              <p class="font-semibold text-slate-100">Minh Lam</p>
+              <p class="text-xs text-slate-400">minh.l@workspace.dev</p>
+              <p class="mt-1 text-xs text-slate-500">Sync enabled • Last updated 2 mins ago</p>
+            </div>
+          </div>
+          <div
+            class="flex flex-col justify-between gap-3 rounded-2xl border border-white/10 bg-slate-900/70 px-4 py-4 shadow-inner shadow-white/5 sm:flex-row sm:items-center">
+            <div class="text-sm">
+              <p class="font-semibold text-slate-100">Account &amp; security</p>
+              <p class="text-xs text-slate-500">Sign-in managed by the Launchpad workspace admin.</p>
+            </div>
+            <button type="button"
+              class="whitespace-nowrap rounded-full border border-white/10 px-4 py-1.5 text-xs font-medium text-slate-200 transition hover:border-sky-400/40 hover:bg-sky-500/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40">Manage</button>
+          </div>
+        </div>
       </div>
-      <form id="settings-form" class="flex flex-1 flex-col overflow-hidden lg:flex-row lg:overflow-visible">
+      <form id="settings-form" class="flex flex-1 flex-col lg:flex-row">
         <aside
-          class="border-b border-white/10 bg-slate-900/90 px-6 py-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400 lg:sticky lg:top-0 lg:flex lg:h-screen lg:w-72 lg:flex-shrink-0 lg:flex-col lg:gap-4 lg:overflow-y-auto lg:border-b-0 lg:border-r lg:px-8 lg:py-10 lg:text-[11px]">
+          class="border-b border-white/10 bg-slate-900/90 px-6 py-4 text-xs font-semibold uppercase tracking-[0.22em] text-slate-400 lg:flex lg:w-72 lg:flex-shrink-0 lg:flex-col lg:gap-4 lg:border-b-0 lg:border-r lg:px-8 lg:py-10 lg:text-[11px]">
           <span class="hidden lg:block text-[11px] text-slate-500">Browse sections</span>
           <nav class="flex gap-2 overflow-x-auto pb-1 text-[11px] lg:flex-col lg:gap-3 lg:overflow-visible lg:pb-0">
+            <a href="#settings-section-overview"
+              class="whitespace-nowrap rounded-full border border-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300 transition hover:border-sky-400/40 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 lg:w-full lg:rounded-2xl lg:px-5 lg:py-3 lg:text-left">
+              Overview
+            </a>
             <a href="#settings-section-appearance"
               class="whitespace-nowrap rounded-full border border-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-slate-300 transition hover:border-sky-400/40 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 lg:w-full lg:rounded-2xl lg:px-5 lg:py-3 lg:text-left">
               Appearance
