@@ -5,6 +5,11 @@ const MAX_PAGE_SIZE = 56;
 const PAGE_SIZE_STEP = 7;
 const SCROLL_PAGE_THRESHOLD = 60;
 const DEFAULT_ICON = "./default-icon.svg";
+const HIDDEN_GROUP_ID = "__hidden_group__";
+const HIDDEN_GROUP_ICON =
+  "https://img.icons8.com/ios-filled/100/ffffff/invisible.png";
+const LONG_PRESS_DURATION_MS = 500;
+const CONTEXT_MENU_MARGIN = 12;
 const SETTINGS_STORAGE_KEY = "launchpad.settings.v1";
 const USER_DATA_STORAGE_KEY = "launchpad.userdata.v1";
 const MOBILE_BREAKPOINT = "(max-width: 640px)";
@@ -69,13 +74,18 @@ const defaultUserData = {
 const state = {
   catalogApps: [],
   apps: [],
+  hiddenApps: [],
   filteredApps: [],
   searchTerm: "",
   currentPage: 0,
   activeIndex: 0,
   settings: { ...defaultSettings },
   userData: { ...defaultUserData },
-  appVisibilityFilter: "",
+  editingAppId: null,
+  contextMenu: {
+    appId: null,
+    source: null,
+  },
 };
 
 const dom = {
@@ -88,10 +98,22 @@ const dom = {
   gridViewport: document.getElementById("launchpad-grid"),
   backgroundOverlay: document.getElementById("background-overlay"),
   openSettingsButton: document.getElementById("open-settings"),
+  openAddAppButton: document.getElementById("open-add-app"),
   settingsModal: document.getElementById("settings-modal"),
   settingsForm: document.getElementById("settings-form"),
   settingsCancel: document.getElementById("settings-cancel"),
   settingsSkip: document.getElementById("settings-skip"),
+  addAppModal: document.getElementById("add-app-modal"),
+  addAppForm: document.getElementById("add-app-form"),
+  addAppClose: document.getElementById("add-app-close"),
+  addAppCancel: document.getElementById("add-app-cancel"),
+  addAppTitle: document.getElementById("add-app-modal-title"),
+  addAppCaption: document.getElementById("add-app-modal-caption"),
+  hiddenAppsModal: document.getElementById("hidden-apps-modal"),
+  hiddenAppsClose: document.getElementById("hidden-apps-close"),
+  hiddenAppsList: document.getElementById("hidden-apps-list"),
+  hiddenAppsEmpty: document.getElementById("hidden-apps-empty"),
+  contextMenu: document.getElementById("app-context-menu"),
   backgroundImageFields: document.querySelector("[data-background-image-fields]"),
   backgroundColorFields: document.querySelector("[data-background-color-fields]"),
   backgroundImageCustomFields: document.querySelector(
@@ -105,13 +127,6 @@ const dom = {
   glassValue: document.getElementById("glass-opacity-value"),
   pageSizeInput: document.getElementById("settings-page-size"),
   pageSizeValue: document.getElementById("page-size-value"),
-  appVisibilityList: document.getElementById("settings-app-visibility"),
-  appVisibilityEmpty: document.getElementById("settings-app-visibility-empty"),
-  appVisibilitySummary: document.getElementById("app-visibility-summary"),
-  appVisibilityFilterInput: document.getElementById("app-visibility-filter"),
-  appVisibilityActions: document.querySelector(
-    "[data-app-visibility-actions]"
-  ),
   customAppNameInput: document.getElementById("custom-app-name"),
   customAppUrlInput: document.getElementById("custom-app-url"),
   customAppDescriptionInput: document.getElementById(
@@ -119,7 +134,6 @@ const dom = {
   ),
   customAppTagsInput: document.getElementById("custom-app-tags"),
   customAppFeedback: document.getElementById("custom-app-feedback"),
-  customAppSubmit: document.getElementById("custom-app-submit"),
   customIconOptions: document.querySelector("[data-custom-icon-options]"),
   customIconCustomFields: document.querySelector(
     "[data-custom-icon-custom-fields]"
@@ -562,13 +576,7 @@ function populateSettingsForm(settings) {
     updatePageSizeIndicator(pageSize);
   }
 
-  if (dom.appVisibilityFilterInput) {
-    dom.appVisibilityFilterInput.value = state.appVisibilityFilter ?? "";
-  }
-
-  renderAppVisibilityList();
   renderCustomIconOptions();
-  updateAppVisibilitySummary();
 }
 
 function syncBackgroundFieldVisibility(backgroundType) {
@@ -666,264 +674,6 @@ function updatePageSizeIndicator(value) {
   }
 }
 
-function updateAppVisibilitySummary() {
-  if (!dom.appVisibilitySummary) return;
-  const total = state.catalogApps.length;
-  if (total === 0) {
-    dom.appVisibilitySummary.textContent = "No apps yet";
-    syncAppVisibilityBulkActions({ total, hidden: 0 });
-    return;
-  }
-  const hidden = state.userData.hiddenAppIds.length;
-  const visible = Math.max(total - hidden, 0);
-  const hiddenSuffix = hidden > 0 ? ` · ${hidden} hidden` : "";
-  dom.appVisibilitySummary.textContent = `Visible ${visible} of ${total}${hiddenSuffix}`;
-  syncAppVisibilityBulkActions({ total, hidden });
-}
-
-function syncAppVisibilityBulkActions({ total, hidden }) {
-  if (!dom.appVisibilityActions) return;
-  const showAllButton = dom.appVisibilityActions.querySelector(
-    'button[data-visibility-action="show-all"]'
-  );
-  const hideAllButton = dom.appVisibilityActions.querySelector(
-    'button[data-visibility-action="hide-all"]'
-  );
-  const invertButton = dom.appVisibilityActions.querySelector(
-    'button[data-visibility-action="invert"]'
-  );
-
-  const noneHidden = hidden === 0;
-  const allHidden = total > 0 && hidden === total;
-  const noApps = total === 0;
-
-  if (showAllButton) {
-    showAllButton.disabled = noneHidden || noApps;
-    showAllButton.setAttribute(
-      "aria-disabled",
-      showAllButton.disabled ? "true" : "false"
-    );
-  }
-  if (hideAllButton) {
-    hideAllButton.disabled = allHidden || noApps;
-    hideAllButton.setAttribute(
-      "aria-disabled",
-      hideAllButton.disabled ? "true" : "false"
-    );
-  }
-  if (invertButton) {
-    invertButton.disabled = noApps;
-    invertButton.setAttribute(
-      "aria-disabled",
-      invertButton.disabled ? "true" : "false"
-    );
-  }
-}
-
-function renderAppVisibilityList() {
-  if (!dom.appVisibilityList) return;
-  const container = dom.appVisibilityList;
-  container.innerHTML = "";
-
-  const hiddenSet = new Set(state.userData.hiddenAppIds);
-  const filter = (state.appVisibilityFilter ?? "").trim().toLowerCase();
-
-  const sortedApps = [...state.catalogApps].sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
-  );
-
-  const filteredApps = sortedApps.filter((app) => {
-    if (!filter) return true;
-    const haystackParts = [app.name ?? "", app.description ?? ""];
-    if (Array.isArray(app.tags)) {
-      haystackParts.push(...app.tags);
-    }
-    return haystackParts
-      .join(" ")
-      .toLowerCase()
-      .includes(filter);
-  });
-
-  if (sortedApps.length === 0 || filteredApps.length === 0) {
-    if (dom.appVisibilityEmpty) {
-      dom.appVisibilityEmpty.textContent = sortedApps.length
-        ? "No apps match your search."
-        : "No apps to manage yet.";
-      dom.appVisibilityEmpty.classList.remove("hidden");
-    }
-    updateAppVisibilitySummary();
-    return;
-  }
-
-  if (dom.appVisibilityEmpty) {
-    dom.appVisibilityEmpty.classList.add("hidden");
-    dom.appVisibilityEmpty.textContent = "No apps to manage yet.";
-  }
-
-  filteredApps.forEach((app) => {
-    const isHidden = hiddenSet.has(app.id);
-
-    const label = document.createElement("label");
-    label.className = [
-      "group",
-      "relative",
-      "flex",
-      "cursor-pointer",
-      "flex-col",
-      "gap-3",
-      "rounded-2xl",
-      "border",
-      "px-4",
-      "py-4",
-      "transition",
-      "focus-within:ring-2",
-      "focus-within:ring-sky-400/40",
-      "hover:border-sky-400/40",
-      "hover:bg-white/10",
-      isHidden ? "border-white/10 bg-slate-900/40 opacity-70" : "border-white/20 bg-white/10 shadow-lg shadow-sky-500/10",
-    ].join(" ");
-    label.dataset.visibility = isHidden ? "hidden" : "visible";
-    label.title = isHidden
-      ? "Hidden - click to show this app"
-      : "Visible - click to hide this app";
-
-    const checkbox = document.createElement("input");
-    checkbox.type = "checkbox";
-    checkbox.className = "peer sr-only";
-    checkbox.dataset.appId = app.id;
-    checkbox.checked = !isHidden;
-    label.appendChild(checkbox);
-
-    const indicator = document.createElement("span");
-    indicator.className = [
-      "pointer-events-none",
-      "absolute",
-      "right-3",
-      "top-3",
-      "flex",
-      "items-center",
-      "gap-1",
-      "rounded-full",
-      "border",
-      "px-2",
-      "py-1",
-      "text-[10px]",
-      "font-semibold",
-      "uppercase",
-      "tracking-[0.24em]",
-      isHidden
-        ? "border-rose-400/40 bg-rose-500/10 text-rose-200"
-        : "border-emerald-400/40 bg-emerald-500/10 text-emerald-200",
-    ].join(" ");
-    indicator.textContent = isHidden ? "Hidden" : "Shown";
-    label.appendChild(indicator);
-
-    const header = document.createElement("div");
-    header.className = "flex items-center gap-3";
-
-    const iconWrapper = document.createElement("span");
-    iconWrapper.className = "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-slate-900/50 shadow-inner shadow-black/20";
-
-    const icon = document.createElement("img");
-    icon.src = sanitizeIconSource(app.icon) || DEFAULT_ICON;
-    icon.alt = "";
-    icon.loading = "lazy";
-    icon.className = "h-8 w-8 object-contain";
-    icon.addEventListener("error", () => {
-      icon.src = DEFAULT_ICON;
-    });
-    iconWrapper.appendChild(icon);
-    header.appendChild(iconWrapper);
-
-    const content = document.createElement("div");
-    content.className = "flex min-w-0 flex-1 flex-col gap-1";
-
-    const title = document.createElement("span");
-    title.className = "truncate text-sm font-semibold text-slate-100";
-    title.textContent = app.name;
-    content.appendChild(title);
-
-    if (app.description) {
-      const subtitle = document.createElement("span");
-      subtitle.className = "truncate text-xs text-slate-400";
-      subtitle.textContent = app.description;
-      content.appendChild(subtitle);
-    }
-
-    if (Array.isArray(app.tags) && app.tags.length > 0) {
-      const tags = document.createElement("span");
-      tags.className = "truncate text-[10px] uppercase tracking-[0.24em] text-slate-500";
-      tags.textContent = app.tags.join(" · ");
-      content.appendChild(tags);
-    }
-
-    header.appendChild(content);
-    label.appendChild(header);
-
-    const footer = document.createElement("div");
-    footer.className = "flex items-center justify-between text-[10px] uppercase tracking-[0.24em] text-slate-500";
-
-    const origin = document.createElement("span");
-    origin.textContent = app.origin === "custom" ? "Custom app" : "Preset";
-    footer.appendChild(origin);
-
-    const hint = document.createElement("span");
-    hint.className = "text-slate-400";
-    hint.textContent = "Toggle visibility";
-    footer.appendChild(hint);
-
-    label.appendChild(footer);
-
-    container.appendChild(label);
-  });
-
-  updateAppVisibilitySummary();
-}
-
-function handleAppVisibilityFilterInput(event) {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement)) return;
-  state.appVisibilityFilter = target.value;
-  renderAppVisibilityList();
-}
-
-function handleAppVisibilityAction(event) {
-  const origin = event.target;
-  if (!(origin instanceof HTMLElement)) return;
-  const button = origin.closest('button[data-visibility-action]');
-  if (!(button instanceof HTMLButtonElement)) return;
-
-  const action = button.dataset.visibilityAction;
-  if (!action || state.catalogApps.length === 0) {
-    return;
-  }
-
-  if (action === "show-all") {
-    state.userData.hiddenAppIds = [];
-  } else if (action === "hide-all") {
-    state.userData.hiddenAppIds = dedupeHiddenIds(
-      state.catalogApps.map((app) => app.id),
-      state.catalogApps
-    );
-  } else if (action === "invert") {
-    const hiddenSet = new Set(state.userData.hiddenAppIds);
-    const nextHidden = state.catalogApps
-      .filter((app) => !hiddenSet.has(app.id))
-      .map((app) => app.id);
-    state.userData.hiddenAppIds = dedupeHiddenIds(
-      nextHidden,
-      state.catalogApps
-    );
-  } else {
-    return;
-  }
-
-  saveUserDataToStorage(state.userData);
-  updateVisibleApps();
-  applyFilter(state.searchTerm ?? "");
-  renderAppVisibilityList();
-}
-
 function syncCustomIconCustomVisibility(choiceValue) {
   if (!dom.customIconCustomFields) return;
   if (choiceValue === "custom") {
@@ -945,6 +695,12 @@ function renderCustomIconOptions(preferredValue) {
 
   container.innerHTML = "";
   const icons = getIconLibrary();
+  const hasPresetMatch =
+    typeof selectedValue === "string" && icons.includes(selectedValue);
+  const preferredCustomValue =
+    typeof selectedValue === "string" && !hasPresetMatch && selectedValue !== "custom"
+      ? selectedValue
+      : "";
   let hasMatched = false;
 
   icons.forEach((icon, index) => {
@@ -1041,11 +797,11 @@ function renderCustomIconOptions(preferredValue) {
   const customCaption = document.createElement("span");
   customCaption.className = "text-[10px] font-semibold uppercase tracking-wide text-slate-400";
   customCaption.textContent = "Paste link";
-  customLabel.appendChild(customCaption);
+ customLabel.appendChild(customCaption);
 
   container.appendChild(customLabel);
 
-  if (!hasMatched && selectedValue === "custom") {
+  if (!hasMatched && (selectedValue === "custom" || preferredCustomValue)) {
     customInput.checked = true;
     hasMatched = true;
   }
@@ -1059,6 +815,14 @@ function renderCustomIconOptions(preferredValue) {
     const first = container.querySelector('input[name="customAppIconChoice"]');
     if (first && first instanceof HTMLInputElement) {
       first.checked = true;
+    }
+  }
+
+  if (dom.customIconCustomInput) {
+    if (preferredCustomValue) {
+      dom.customIconCustomInput.value = preferredCustomValue;
+    } else if (selectedValue !== "custom") {
+      dom.customIconCustomInput.value = "";
     }
   }
 
@@ -1086,11 +850,18 @@ function showCustomAppFeedback(message, variant = "info") {
 }
 
 function resetCustomAppForm() {
+  state.editingAppId = null;
+  if (dom.addAppForm) {
+    dom.addAppForm.reset();
+    dom.addAppForm.dataset.mode = "create";
+  }
   dom.customAppNameInput && (dom.customAppNameInput.value = "");
   dom.customAppUrlInput && (dom.customAppUrlInput.value = "");
   dom.customAppDescriptionInput && (dom.customAppDescriptionInput.value = "");
   dom.customAppTagsInput && (dom.customAppTagsInput.value = "");
   dom.customIconCustomInput && (dom.customIconCustomInput.value = "");
+  showCustomAppFeedback("", "info");
+  updateAddAppModalLabels("create");
   renderCustomIconOptions();
 }
 
@@ -1105,26 +876,6 @@ function getSelectedCustomIconChoice() {
   return null;
 }
 
-function handleAppVisibilityChange(event) {
-  const target = event.target;
-  if (!(target instanceof HTMLInputElement)) return;
-  const appId = target.dataset.appId;
-  if (!appId) return;
-
-  const hiddenSet = new Set(state.userData.hiddenAppIds);
-  if (target.checked) {
-    hiddenSet.delete(appId);
-  } else {
-    hiddenSet.add(appId);
-  }
-
-  state.userData.hiddenAppIds = Array.from(hiddenSet);
-  saveUserDataToStorage(state.userData);
-  updateVisibleApps();
-  applyFilter(state.searchTerm ?? "");
-  renderAppVisibilityList();
-}
-
 function handleCustomIconOptionChange(event) {
   const target = event.target;
   if (!(target instanceof HTMLInputElement)) return;
@@ -1137,7 +888,110 @@ function handleCustomIconOptionChange(event) {
   }
 }
 
-function handleAddCustomApp() {
+function updateAddAppModalLabels(mode, appName = "") {
+  const isEditing = mode === "edit";
+  if (dom.addAppForm) {
+    dom.addAppForm.dataset.mode = mode;
+  }
+  if (dom.addAppTitle) {
+    dom.addAppTitle.textContent = isEditing
+      ? "Edit application"
+      : "Add application";
+  }
+  if (dom.addAppCaption) {
+    dom.addAppCaption.textContent = isEditing
+      ? "Update the shortcut you created."
+      : "Quickly add a shortcut to the launchpad.";
+  }
+  const submitButton = dom.addAppForm?.querySelector("#custom-app-submit");
+  if (submitButton instanceof HTMLButtonElement) {
+    submitButton.textContent = isEditing ? "Save changes" : "Add app";
+  }
+  if (isEditing && appName && dom.addAppTitle) {
+    dom.addAppTitle.textContent = `Edit "${appName}"`;
+  }
+}
+
+function populateCustomAppForm(app) {
+  if (!app) {
+    resetCustomAppForm();
+    return;
+  }
+
+  state.editingAppId = app.id;
+
+  if (dom.customAppNameInput) {
+    dom.customAppNameInput.value = app.name ?? "";
+  }
+  if (dom.customAppUrlInput) {
+    dom.customAppUrlInput.value = app.url ?? "";
+  }
+  if (dom.customAppDescriptionInput) {
+    dom.customAppDescriptionInput.value = app.description ?? "";
+  }
+  if (dom.customAppTagsInput) {
+    dom.customAppTagsInput.value = Array.isArray(app.tags)
+      ? app.tags.join(", ")
+      : "";
+  }
+  renderCustomIconOptions(app.icon ?? null);
+  showCustomAppFeedback("", "info");
+  updateAddAppModalLabels("edit", app.name ?? "");
+}
+
+function isAddAppModalOpen() {
+  return Boolean(
+    dom.addAppModal && !dom.addAppModal.classList.contains("hidden")
+  );
+}
+
+function isHiddenAppsModalOpen() {
+  return Boolean(
+    dom.hiddenAppsModal && !dom.hiddenAppsModal.classList.contains("hidden")
+  );
+}
+
+function unlockBodyScrollIfSafe() {
+  if (
+    !isSettingsModalOpen() &&
+    !isAddAppModalOpen() &&
+    !isHiddenAppsModalOpen()
+  ) {
+    document.body.classList.remove("overflow-hidden");
+  }
+}
+
+function openAddAppModal(options = {}) {
+  if (!dom.addAppModal) return;
+  const app = options?.app;
+  if (app) {
+    populateCustomAppForm(app);
+  } else {
+    resetCustomAppForm();
+  }
+
+  dom.addAppModal.classList.remove("hidden");
+  dom.addAppModal.classList.add("flex");
+  dom.addAppModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("overflow-hidden");
+  hideAppContextMenu();
+
+  window.setTimeout(() => {
+    dom.customAppNameInput?.focus({ preventScroll: true });
+  }, 0);
+}
+
+function closeAddAppModal() {
+  if (!dom.addAppModal) return;
+  dom.addAppModal.classList.add("hidden");
+  dom.addAppModal.classList.remove("flex");
+  dom.addAppModal.setAttribute("aria-hidden", "true");
+  resetCustomAppForm();
+  unlockBodyScrollIfSafe();
+}
+
+function handleSubmitCustomApp(event) {
+  event.preventDefault();
   if (!dom.customAppNameInput || !dom.customAppUrlInput) return;
 
   const name = dom.customAppNameInput.value.trim();
@@ -1171,7 +1025,8 @@ function handleAddCustomApp() {
     }
     icon = sanitizeIconSource(customValue);
     const normalized = customValue.trim();
-    const looksRelative = normalized.startsWith("./") || normalized.startsWith("/");
+    const looksRelative =
+      normalized.startsWith("./") || normalized.startsWith("/");
     const looksHttp = /^https?:\/\//i.test(normalized);
     if (icon === DEFAULT_ICON && !looksHttp && !looksRelative) {
       showCustomAppFeedback("Please use a valid image URL.", "error");
@@ -1182,30 +1037,59 @@ function handleAddCustomApp() {
     icon = sanitizeIconSource(iconChoice);
   }
 
-  const existingIds = new Set(state.catalogApps.map((app) => app.id));
-  const baseId = createSlugId("custom", name);
-  let newId = baseId;
-  let counter = 2;
-  while (existingIds.has(newId)) {
-    newId = `${baseId}-${counter}`;
-    counter += 1;
+  const editingId = state.editingAppId;
+  if (editingId) {
+    const existingApp = state.catalogApps.find((app) => app.id === editingId);
+    if (!existingApp) {
+      showCustomAppFeedback("Unable to find the app to update.", "error");
+      return;
+    }
+    if (existingApp.origin !== "custom") {
+      showCustomAppFeedback(
+        "Only custom apps can be edited from here.",
+        "error"
+      );
+      return;
+    }
+    const updatedApp = {
+      ...existingApp,
+      name,
+      description,
+      url,
+      icon,
+      tags,
+    };
+    state.catalogApps = state.catalogApps.map((app) =>
+      app.id === editingId ? updatedApp : app
+    );
+    state.userData.customApps = state.userData.customApps.map((entry) =>
+      entry.id === editingId ? stripAppForStorage(updatedApp) : entry
+    );
+  } else {
+    const existingIds = new Set(state.catalogApps.map((app) => app.id));
+    const baseId = createSlugId("custom", name);
+    let newId = baseId;
+    let counter = 2;
+    while (existingIds.has(newId)) {
+      newId = `${baseId}-${counter}`;
+      counter += 1;
+    }
+    const newApp = {
+      id: newId,
+      name,
+      description,
+      url,
+      icon,
+      tags,
+      origin: "custom",
+    };
+    state.catalogApps = [...state.catalogApps, newApp];
+    state.userData.customApps = [
+      ...state.userData.customApps,
+      stripAppForStorage(newApp),
+    ];
   }
 
-  const newApp = {
-    id: newId,
-    name,
-    description,
-    url,
-    icon,
-    tags,
-    origin: "custom",
-  };
-
-  state.catalogApps = [...state.catalogApps, newApp];
-  state.userData.customApps = [
-    ...state.userData.customApps,
-    stripAppForStorage(newApp),
-  ];
   state.userData.hiddenAppIds = dedupeHiddenIds(
     state.userData.hiddenAppIds,
     state.catalogApps
@@ -1214,18 +1098,280 @@ function handleAddCustomApp() {
 
   updateVisibleApps();
   applyFilter(state.searchTerm ?? "");
-  renderAppVisibilityList();
-  updateAppVisibilitySummary();
-
-  resetCustomAppForm();
-  showCustomAppFeedback("App added to your launchpad.", "success");
+  closeAddAppModal();
 }
 
-function refreshAppManagementUI() {
-  renderAppVisibilityList();
-  renderCustomIconOptions();
-  updateAppVisibilitySummary();
-  updatePageSizeIndicator();
+function openHiddenAppsModal() {
+  if (!dom.hiddenAppsModal) return;
+  renderHiddenAppsList();
+  dom.hiddenAppsModal.classList.remove("hidden");
+  dom.hiddenAppsModal.classList.add("flex");
+  dom.hiddenAppsModal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("overflow-hidden");
+  hideAppContextMenu();
+}
+
+function closeHiddenAppsModal() {
+  if (!dom.hiddenAppsModal) return;
+  dom.hiddenAppsModal.classList.add("hidden");
+  dom.hiddenAppsModal.classList.remove("flex");
+  dom.hiddenAppsModal.setAttribute("aria-hidden", "true");
+  unlockBodyScrollIfSafe();
+}
+
+function renderHiddenAppsList() {
+  if (!dom.hiddenAppsList || !dom.hiddenAppsEmpty) return;
+  dom.hiddenAppsList.innerHTML = "";
+
+  if (state.hiddenApps.length === 0) {
+    dom.hiddenAppsEmpty.textContent = "You do not have hidden apps right now.";
+    dom.hiddenAppsEmpty.classList.remove("hidden");
+    return;
+  }
+
+  dom.hiddenAppsEmpty.textContent = "";
+  dom.hiddenAppsEmpty.classList.add("hidden");
+
+  state.hiddenApps.forEach((app) => {
+    const button = dom.cardTemplate.content.firstElementChild.cloneNode(true);
+    button.classList.add(
+      "w-full",
+      "bg-white/5",
+      "hover:bg-white/10",
+      "transition",
+      "shadow-inner",
+      "shadow-white/5"
+    );
+    button.dataset.appId = app.id;
+    button.removeAttribute("data-index");
+    button.title = app.description ?? app.name ?? "";
+
+    const nameEl = button.querySelector("[data-app-name]");
+    const iconEl = button.querySelector("[data-app-icon]");
+    if (nameEl) {
+      nameEl.textContent = app.name;
+      nameEl.classList.add("max-w-full");
+    }
+    if (iconEl) {
+      iconEl.src = resolveIconSource(app.icon);
+      iconEl.alt = `${app.name} icon`;
+      iconEl.dataset.fallbackApplied = "false";
+      iconEl.addEventListener("error", () => applyIconFallback(iconEl));
+    }
+
+    button.addEventListener("click", () => openApp(app));
+    button.addEventListener("dblclick", () => openApp(app));
+    attachContextMenuHandlers(button, app, "hidden");
+
+    dom.hiddenAppsList.appendChild(button);
+  });
+}
+
+function hideApp(appId) {
+  if (typeof appId !== "string" || !appId) return;
+  const hiddenSet = new Set(state.userData.hiddenAppIds);
+  hiddenSet.add(appId);
+  state.userData.hiddenAppIds = dedupeHiddenIds(
+    Array.from(hiddenSet),
+    state.catalogApps
+  );
+  saveUserDataToStorage(state.userData);
+  updateVisibleApps();
+  applyFilter(state.searchTerm ?? "");
+}
+
+function showApp(appId) {
+  if (typeof appId !== "string" || !appId) return;
+  const hiddenSet = new Set(state.userData.hiddenAppIds);
+  hiddenSet.delete(appId);
+  state.userData.hiddenAppIds = dedupeHiddenIds(
+    Array.from(hiddenSet),
+    state.catalogApps
+  );
+  saveUserDataToStorage(state.userData);
+  updateVisibleApps();
+  applyFilter(state.searchTerm ?? "");
+}
+
+function buildHiddenAppsGroup() {
+  const count = state.hiddenApps.length;
+  return {
+    id: HIDDEN_GROUP_ID,
+    name: count === 1 ? "Hidden app" : "Hidden apps",
+    description:
+      count === 1
+        ? "Open to restore the hidden app."
+        : "Open to manage hidden apps.",
+    icon: HIDDEN_GROUP_ICON,
+    origin: "system",
+    type: "hidden-group",
+    hiddenCount: count,
+  };
+}
+
+function isHiddenGroup(app) {
+  if (!app) return false;
+  return app.id === HIDDEN_GROUP_ID || app.type === "hidden-group";
+}
+
+function attachContextMenuHandlers(element, app, source) {
+  
+  if (!element || !app || isHiddenGroup(app)) return;
+
+  const handleContextMenu = (event) => {
+    event.preventDefault();
+    console.log("menu");
+    showAppContextMenu({
+      app,
+      source,
+      x: event.clientX,
+      y: event.clientY,
+    });
+  };
+
+  element.addEventListener("contextmenu", handleContextMenu);
+
+  let longPressTimer = null;
+  let lastPointerEvent = null;
+
+  const startLongPress = (event) => {
+    if (event.pointerType === "mouse") return;
+    lastPointerEvent = event;
+    longPressTimer = window.setTimeout(() => {
+      if (!lastPointerEvent) return;
+      showAppContextMenu({
+        app,
+        source,
+        x: lastPointerEvent.clientX,
+        y: lastPointerEvent.clientY,
+      });
+    }, LONG_PRESS_DURATION_MS);
+  };
+
+  const clearLongPress = () => {
+    if (longPressTimer) {
+      window.clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+    lastPointerEvent = null;
+  };
+
+  element.addEventListener("pointerdown", startLongPress, { passive: true });
+  element.addEventListener("pointerup", clearLongPress, { passive: true });
+  element.addEventListener("pointerleave", clearLongPress, { passive: true });
+  element.addEventListener("pointercancel", clearLongPress, { passive: true });
+}
+
+function isContextMenuOpen() {
+  return Boolean(
+    dom.contextMenu && !dom.contextMenu.classList.contains("hidden")
+  );
+}
+
+function showAppContextMenu({ app, source, x, y }) {
+  console.log("showwwww");
+  
+  if (!dom.contextMenu) return;
+  if (isHiddenGroup(app)) return;
+
+  const toggleButton = dom.contextMenu.querySelector(
+    'button[data-action="toggle-visibility"]'
+  );
+  const toggleLabel = toggleButton?.querySelector("span");
+  if (toggleLabel) {
+    toggleLabel.textContent =
+      source === "hidden" ? "Show on launchpad" : "Hide from launchpad";
+  }
+
+  const editButton = dom.contextMenu.querySelector(
+    'button[data-action="edit"]'
+  );
+  if (editButton) {
+    if (app.origin === "custom" && !isHiddenGroup(app)) {
+      editButton.classList.remove("hidden");
+    } else {
+      editButton.classList.add("hidden");
+    }
+  }
+
+  state.contextMenu = {
+    appId: app.id,
+    source,
+  };
+  dom.contextMenu.dataset.appId = app.id;
+  dom.contextMenu.dataset.source = source;
+
+  dom.contextMenu.style.visibility = "hidden";
+  dom.contextMenu.classList.remove("hidden");
+  dom.contextMenu.style.left = "0px";
+  dom.contextMenu.style.top = "0px";
+
+  const { width, height } = dom.contextMenu.getBoundingClientRect();
+  const viewportWidth = window.innerWidth;
+  const viewportHeight = window.innerHeight;
+
+  let left = x;
+  let top = y;
+
+  if (left + width + CONTEXT_MENU_MARGIN > viewportWidth) {
+    left = viewportWidth - width - CONTEXT_MENU_MARGIN;
+  }
+  if (top + height + CONTEXT_MENU_MARGIN > viewportHeight) {
+    top = viewportHeight - height - CONTEXT_MENU_MARGIN;
+  }
+
+  left = Math.max(CONTEXT_MENU_MARGIN, left);
+  top = Math.max(CONTEXT_MENU_MARGIN, top);
+
+  dom.contextMenu.style.left = `${left}px`;
+  dom.contextMenu.style.top = `${top}px`;
+  dom.contextMenu.style.visibility = "visible";
+}
+
+function hideAppContextMenu() {
+  if (!dom.contextMenu) return;
+  dom.contextMenu.classList.add("hidden");
+  dom.contextMenu.dataset.appId = "";
+  dom.contextMenu.dataset.source = "";
+  state.contextMenu = { appId: null, source: null };
+}
+
+function handleContextMenuAction(action) {
+  if (!action) return;
+  const { appId, source } = state.contextMenu;
+  if (!appId) {
+    hideAppContextMenu();
+    return;
+  }
+
+  const app =
+    state.catalogApps.find((item) => item.id === appId) ||
+    state.hiddenApps.find((item) => item.id === appId);
+  if (!app) {
+    hideAppContextMenu();
+    return;
+  }
+
+  if (action === "open") {
+    hideAppContextMenu();
+    openApp(app);
+    return;
+  }
+
+  if (action === "toggle-visibility") {
+    hideAppContextMenu();
+    if (source === "hidden") {
+      showApp(appId);
+    } else {
+      hideApp(appId);
+    }
+    return;
+  }
+
+  if (action === "edit" && app.origin === "custom") {
+    hideAppContextMenu();
+    openAddAppModal({ app });
+  }
 }
 
 function setupSettingsUI() {
@@ -1308,25 +1454,6 @@ function setupSettingsUI() {
     });
   }
 
-  dom.appVisibilityList?.addEventListener("change", handleAppVisibilityChange);
-  dom.appVisibilityFilterInput?.addEventListener(
-    "input",
-    handleAppVisibilityFilterInput
-  );
-  dom.appVisibilityFilterInput?.addEventListener(
-    "search",
-    handleAppVisibilityFilterInput
-  );
-  dom.appVisibilityActions?.addEventListener(
-    "click",
-    handleAppVisibilityAction
-  );
-  dom.customIconOptions?.addEventListener("change", handleCustomIconOptionChange);
-  dom.customAppSubmit?.addEventListener("click", (event) => {
-    event.preventDefault();
-    handleAddCustomApp();
-  });
-
   dom.openSettingsButton?.addEventListener("click", () => {
     showSettingsModal({ autofocus: true });
   });
@@ -1360,11 +1487,83 @@ function setupSettingsUI() {
   }
 }
 
+function setupAddAppModal() {
+  if (!dom.addAppModal || !dom.addAppForm) return;
+
+  dom.openAddAppButton?.addEventListener("click", () => {
+    openAddAppModal();
+  });
+
+  dom.addAppClose?.addEventListener("click", () => {
+    closeAddAppModal();
+  });
+
+  dom.addAppCancel?.addEventListener("click", () => {
+    closeAddAppModal();
+  });
+
+  dom.addAppModal.addEventListener("click", (event) => {
+    if (event.target === dom.addAppModal) {
+      closeAddAppModal();
+    }
+  });
+
+  dom.addAppForm.addEventListener("submit", handleSubmitCustomApp);
+  dom.customIconOptions?.addEventListener("change", handleCustomIconOptionChange);
+
+  resetCustomAppForm();
+}
+
+function setupHiddenAppsModal() {
+  if (!dom.hiddenAppsModal) return;
+
+  dom.hiddenAppsClose?.addEventListener("click", () => {
+    closeHiddenAppsModal();
+  });
+
+  dom.hiddenAppsModal.addEventListener("click", (event) => {
+    if (event.target === dom.hiddenAppsModal) {
+      closeHiddenAppsModal();
+    }
+  });
+}
+
+function setupContextMenu() {
+  if (!dom.contextMenu) return;
+
+  dom.contextMenu.addEventListener("click", (event) => {
+    const button = event.target.closest(".context-menu-item");
+    if (!(button instanceof HTMLButtonElement)) return;
+    const action = button.dataset.action;
+    if (!action) return;
+    event.preventDefault();
+    handleContextMenuAction(action);
+  });
+
+  document.addEventListener("pointerdown", (event) => {
+    if (!isContextMenuOpen()) return;
+    if (
+      event.target instanceof Node &&
+      dom.contextMenu?.contains(event.target)
+    ) {
+      return;
+    }
+    hideAppContextMenu();
+  });
+
+  window.addEventListener("blur", hideAppContextMenu);
+  window.addEventListener("scroll", hideAppContextMenu, true);
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && isContextMenuOpen()) {
+      hideAppContextMenu();
+    }
+  });
+}
+
 function showSettingsModal(options = {}) {
   if (!dom.settingsModal) return;
   populateSettingsForm(state.settings);
-  resetCustomAppForm();
-  showCustomAppFeedback("", "info");
   dom.settingsModal.classList.remove("hidden");
   dom.settingsModal.classList.add("flex");
   dom.settingsModal.setAttribute("aria-hidden", "false");
@@ -1423,11 +1622,7 @@ function closeSettingsModal(options = {}) {
   dom.settingsModal.classList.add("hidden");
   dom.settingsModal.classList.remove("flex");
   dom.settingsModal.setAttribute("aria-hidden", "true");
-  document.body.classList.remove("overflow-hidden");
-  state.appVisibilityFilter = "";
-  if (dom.appVisibilityFilterInput) {
-    dom.appVisibilityFilterInput.value = "";
-  }
+  unlockBodyScrollIfSafe();
   populateSettingsForm(state.settings);
 
   if (options.markCompleted) {
@@ -1516,10 +1711,13 @@ async function init() {
   saveUserDataToStorage(state.userData);
   applySettings(state.settings);
   setupSettingsUI();
+  setupAddAppModal();
+  setupHiddenAppsModal();
+  setupContextMenu();
 
   await loadApps();
   updateVisibleApps();
-  refreshAppManagementUI();
+  renderCustomIconOptions();
   attachGlobalListeners();
   applyFilter("");
   state.activeIndex = -1;
@@ -1597,6 +1795,25 @@ function attachGlobalListeners() {
           event.preventDefault();
           closeSettingsModal({ markCompleted: true });
         }
+        return;
+      }
+      if (isAddAppModalOpen()) {
+        if (key === "Escape") {
+          event.preventDefault();
+          closeAddAppModal();
+        }
+        return;
+      }
+      if (isHiddenAppsModalOpen()) {
+        if (key === "Escape") {
+          event.preventDefault();
+          closeHiddenAppsModal();
+        }
+        return;
+      }
+      if (isContextMenuOpen() && key === "Escape") {
+        event.preventDefault();
+        hideAppContextMenu();
         return;
       }
       const isSearchFocused = document.activeElement === dom.searchInput;
@@ -1765,6 +1982,10 @@ function applyFilter(term) {
     });
   }
 
+  if (!normalized && state.hiddenApps.length > 0) {
+    state.filteredApps = [...state.filteredApps, buildHiddenAppsGroup()];
+  }
+
   state.currentPage = 0;
   if (!normalized) {
     state.activeIndex = -1;
@@ -1777,8 +1998,15 @@ function applyFilter(term) {
 }
 
 function updateVisibleApps() {
-  const hiddenSet = new Set(state.userData.hiddenAppIds);
+  const dedupedHidden = dedupeHiddenIds(
+    state.userData.hiddenAppIds,
+    state.catalogApps
+  );
+  state.userData.hiddenAppIds = dedupedHidden;
+  const hiddenSet = new Set(dedupedHidden);
+  state.hiddenApps = state.catalogApps.filter((app) => hiddenSet.has(app.id));
   state.apps = state.catalogApps.filter((app) => !hiddenSet.has(app.id));
+  renderHiddenAppsList();
 }
 
 function render() {
@@ -1855,15 +2083,28 @@ function createAppCard(app, absoluteIndex) {
   clone.dataset.appId = app.id;
   clone.dataset.index = String(absoluteIndex);
   clone.title = app.description ?? app.name;
-  nameEl.textContent = app.name;
-  iconEl.src = resolveIconSource(app.icon);
-  iconEl.alt = `${app.name} icon`;
+
+  if (isHiddenGroup(app)) {
+    const count = app.hiddenCount ?? state.hiddenApps.length;
+    const label =
+      count === 1 ? "Hidden app" : `Hidden apps (${count})`;
+    nameEl.textContent = label;
+    iconEl.src = resolveIconSource(app.icon ?? HIDDEN_GROUP_ICON);
+    iconEl.alt = "Hidden apps";
+    clone.classList.add("border-dashed", "border-white/10");
+    clone.addEventListener("click", () => openHiddenAppsModal());
+    clone.addEventListener("dblclick", () => openHiddenAppsModal());
+  } else {
+    nameEl.textContent = app.name;
+    iconEl.src = resolveIconSource(app.icon);
+    iconEl.alt = `${app.name} icon`;
+    clone.addEventListener("click", () => openApp(app));
+    clone.addEventListener("dblclick", () => openApp(app));
+    attachContextMenuHandlers(clone, app, "visible");
+  }
+
   iconEl.dataset.fallbackApplied = "false";
   iconEl.addEventListener("error", () => applyIconFallback(iconEl));
-
-  clone.addEventListener("click", () => openApp(app));
-
-  clone.addEventListener("dblclick", () => openApp(app));
 
   clone.addEventListener("focus", () => {
     const idx = Number.parseInt(clone.dataset.index, 10);
@@ -2055,12 +2296,18 @@ function updateActiveCard() {
 function openActiveApp() {
   if (!state.filteredApps.length) return;
   const app = state.filteredApps[state.activeIndex];
-  if (app?.url) {
-    window.open(app.url, "_blank", "noopener,noreferrer");
-  }
+  if (!app) return;
+  openApp(app);
 }
 
 function openApp(app) {
+  if (!app) return;
+
+  if (isHiddenGroup(app)) {
+    openHiddenAppsModal();
+    return;
+  }
+
   const index = state.filteredApps.findIndex((item) => item.id === app.id);
   if (index !== -1) {
     setActiveIndex(index, { syncPage: true });
