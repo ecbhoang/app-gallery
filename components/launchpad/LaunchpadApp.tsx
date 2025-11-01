@@ -105,7 +105,10 @@ export function LaunchpadApp(): JSX.Element {
   }, []);
 
   return (
-    <div className="relative min-h-screen w-full select-none">
+    <div
+      className="relative min-h-screen min-h-[100dvh] w-full select-none"
+      suppressHydrationWarning
+    >
       <div
         className="pointer-events-none absolute inset-0 transition-all duration-500"
         style={overlayStyle}
@@ -113,7 +116,7 @@ export function LaunchpadApp(): JSX.Element {
 
       <LoadingOverlay visible={controller.isLoading} />
 
-      <main className="relative z-10 flex min-h-screen w-full flex-col items-center px-4 pb-8 pt-24 sm:pt-16">
+      <main className="relative z-10 flex min-h-screen min-h-[100dvh] w-full flex-col items-center px-4 pb-[calc(var(--safe-area-bottom)+2rem)] pt-[calc(var(--safe-area-top)+6rem)] sm:pt-[calc(var(--safe-area-top)+4rem)]">
         <LaunchpadHeader
           searchRef={searchRef}
           defaultValue={searchTerm}
@@ -139,7 +142,7 @@ export function LaunchpadApp(): JSX.Element {
                 className="flex w-full items-stretch justify-center lg:h-full lg:shrink-0"
               >
                 <div
-                  className="grid w-full gap-4 sm:gap-6 grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
+                  className="grid w-full gap-8 sm:gap-6 grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
                 >
                   {page.map((app, index) => {
                     const globalIndex = isMobileLayout
