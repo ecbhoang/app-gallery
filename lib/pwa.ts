@@ -21,8 +21,8 @@ function matchesDisplayMode(): boolean {
 function hasNavigatorStandalone(): boolean {
   if (typeof navigator === "undefined") return false;
   if (!("standalone" in navigator)) return false;
-  // @ts-expect-error - iOS Safari exposes `navigator.standalone`
-  return Boolean(navigator.standalone);
+  const maybeNavigator = navigator as Navigator & { standalone?: unknown };
+  return Boolean(maybeNavigator.standalone);
 }
 
 function referrerIndicatesPwa(): boolean {
