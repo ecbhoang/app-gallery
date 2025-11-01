@@ -37,10 +37,12 @@ export function normalizePageSize(value: unknown): number {
 export function sanitizeHttpUrl(value: unknown): string {
   if (typeof value !== "string") return "";
   const trimmed = value.trim();
+
   if (!trimmed || /^javascript:/i.test(trimmed)) return "";
-  if (!/^https?:\/\//i.test(trimmed)) return "";
+
   return trimmed;
 }
+
 
 export function sanitizeIconSource(value: unknown): string {
   if (typeof value !== "string") return DEFAULT_ICON;
@@ -267,6 +269,9 @@ export function updateSettingsFromForm(
       0.05,
       0.95,
       defaultSettings.glassTintOpacity
+    ),
+    hideDefaultApps: Boolean(
+      partial.hideDefaultApps ?? base.hideDefaultApps ?? defaultSettings.hideDefaultApps
     ),
   };
 }

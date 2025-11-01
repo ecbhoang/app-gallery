@@ -38,35 +38,37 @@ export function SettingsModal({ controller }: SettingsModalProps) {
   const [glassTintColor, setGlassTintColor] = useState(
     controller.settings.glassTintColor
   );
+  const [hideDefaultApps, setHideDefaultApps] = useState(
+    controller.settings.hideDefaultApps ?? false
+  );
   const [pageSize, setPageSize] = useState(
     controller.desktopPageSize.toString()
   );
 
+  const { settings: controllerSettings, modals, desktopPageSize } = controller;
+
   useEffect(() => {
-    if (!controller.modals.settings) return;
+    if (!modals.settings) return;
     setBackgroundChoice(
-      controller.settings.backgroundImage &&
+      controllerSettings.backgroundImage &&
         PRESET_BACKGROUND_OPTIONS.includes(
-          controller.settings.backgroundImage
+          controllerSettings.backgroundImage
         )
-        ? controller.settings.backgroundImage
-        : controller.settings.backgroundImage
+        ? controllerSettings.backgroundImage
+        : controllerSettings.backgroundImage
           ? "custom"
           : PRESET_BACKGROUND_OPTIONS[0]
     );
-    setCustomImage(controller.settings.backgroundImage);
-    setOverlayOpacity(controller.settings.overlayOpacity);
-    setBlurStrength(controller.settings.blurStrength);
-    setGlassOpacity(controller.settings.glassTintOpacity);
-    setBackgroundType(controller.settings.backgroundType);
-    setBackgroundColor(controller.settings.backgroundColor);
-    setGlassTintColor(controller.settings.glassTintColor);
-    setPageSize(controller.desktopPageSize.toString());
-  }, [
-    controller.modals.settings,
-    controller.settings,
-    controller.desktopPageSize,
-  ]);
+    setCustomImage(controllerSettings.backgroundImage);
+    setOverlayOpacity(controllerSettings.overlayOpacity);
+    setBlurStrength(controllerSettings.blurStrength);
+    setGlassOpacity(controllerSettings.glassTintOpacity);
+    setBackgroundType(controllerSettings.backgroundType);
+    setBackgroundColor(controllerSettings.backgroundColor);
+    setGlassTintColor(controllerSettings.glassTintColor);
+    setPageSize(desktopPageSize.toString());
+    setHideDefaultApps(controllerSettings.hideDefaultApps ?? false);
+  }, [modals.settings, controllerSettings, desktopPageSize]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -80,6 +82,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
       glassTintColor,
       glassTintOpacity: glassOpacity,
       pageSize: Number(pageSize),
+      hideDefaultApps,
     });
   };
 
@@ -196,7 +199,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
                     className="sr-only text-base"
                   />
                   <input
-                    type="url"
+                    type="string"
                     placeholder="https://images.unsplash.com/..."
                     value={customImage}
                     onFocus={() => setBackgroundChoice("custom")}
@@ -276,6 +279,28 @@ export function SettingsModal({ controller }: SettingsModalProps) {
               onChange={(event) => setPageSize(event.target.value)}
               className="w-24 rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 focus:border-sky-400/40 focus:outline-none focus:ring-0"
             />
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+              Launchpad data
+            </h3>
+            <label className="flex items-start gap-3 rounded-2xl border border-white/10 bg-slate-900/40 p-4 transition hover:border-white/20 hover:bg-slate-900/60">
+              <input
+                type="checkbox"
+                className="mt-1 h-4 w-4 rounded border-white/20 text-sky-400 focus:ring-sky-400"
+                checked={hideDefaultApps}
+                onChange={(event) => setHideDefaultApps(event.target.checked)}
+              />
+              <span>
+                <span className="font-medium text-slate-100">
+                  Only show my custom apps
+                </span>
+                <span className="mt-1 block text-xs text-slate-400">
+                  Hide all catalogue apps and keep only the shortcuts you&apos;ve added manually.
+                </span>
+              </span>
+            </label>
           </section>
         </div>
         <div className="flex items-center justify-center sm:justify-between border-t border-white/10 bg-slate-900/80 px-6 py-4 text-sm text-slate-300 sm:px-8">

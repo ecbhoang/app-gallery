@@ -5,6 +5,7 @@ import type { LaunchpadApp } from "@lib/types";
 import EditIcon from "@icons/EditIcon";
 import EyeIcon from "@icons/EyeIcon";
 import OpenIcon from "@icons/OpenIcon";
+import CloseIcon from "@icons/CloseIcon";
 
 type ContextMenuProps = {
   controller: LaunchpadController;
@@ -100,6 +101,19 @@ export const ContextMenu = forwardRef<HTMLDivElement, ContextMenuProps>(
           >
             <EditIcon className="h-4 w-4" />
             <span>Edit</span>
+          </button>
+        )}
+        {app.origin === "custom" && (
+          <button
+            type="button"
+            className="context-menu-item flex w-full items-center gap-3 rounded-xl px-3 py-2 text-left text-rose-300 hover:bg-rose-500/10"
+            onClick={() => {
+              controller.closeContextMenu();
+              controller.removeCustomApp(app.id);
+            }}
+          >
+            <CloseIcon className="h-4 w-4" />
+            <span>Delete</span>
           </button>
         )}
       </div>

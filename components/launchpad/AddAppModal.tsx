@@ -64,6 +64,8 @@ export function AddAppModal({ controller }: AddAppModalProps) {
       iconChoice: formState.iconChoice,
       iconCustom: formState.iconCustom,
     });
+
+
     if (!result.success) {
       setFeedback(result.message ?? "Unable to save the app.");
     } else {
@@ -121,7 +123,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
               URL
             </span>
             <input
-              type="url"
+              type="string"
               required
               value={formState.url}
               onChange={(event) =>
@@ -218,7 +220,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
                   Custom icon URL
                 </span>
                 <input
-                  type="url"
+                  type="string"
                   value={formState.iconCustom}
                   onFocus={() =>
                     setFormState((prev) => ({ ...prev, iconChoice: "custom" }))
@@ -235,7 +237,6 @@ export function AddAppModal({ controller }: AddAppModalProps) {
               </label>
             </div>
           </div>
-
           {feedback && <p className="text-xs text-emerald-400">{feedback}</p>}
         </div>
         <div className="flex items-center justify-between border-t border-white/10 bg-slate-900/80 px-6 py-4 text-sm text-slate-300 sm:px-8">
@@ -248,7 +249,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
           </button>
           <button
             type="submit"
-            className="rounded-2xl bg-sky-500/80 px-5 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-500/25 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
+            className="rounded-2xl bg-gradient-to-r from-sky-400/80 via-blue-500/80 to-fuchsia-500/80 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
           >
             {controller.editingApp ? "Save changes" : "Add app"}
           </button>

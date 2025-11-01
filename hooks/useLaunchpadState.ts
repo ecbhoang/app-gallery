@@ -58,6 +58,7 @@ export type SettingsFormInput = {
   glassTintColor: string;
   glassTintOpacity: number;
   pageSize: number;
+  hideDefaultApps: boolean;
 };
 
 type LaunchpadModalState = {
@@ -102,6 +103,7 @@ export type LaunchpadController = {
   closeHiddenApps: () => void;
   hideApp: (appId: string) => void;
   showApp: (appId: string) => void;
+  removeCustomApp: (appId: string) => void;
   openContextMenu: (
     app: LaunchpadApp,
     source: ContextMenuSource,
@@ -147,7 +149,12 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
 
   useEffect(() => {
     setHydration("ready");
-    setSettings(loadSettingsFromStorage());
+    const storedSettings = loadSettingsFromStorage();
+    setSettings({
+      ...storedSettings,
+      hideDefaultApps:
+        storedSettings.hideDefaultApps ?? defaultSettings.hideDefaultApps,
+    });
     const storedUserData = loadUserDataFromStorage();
     setUserData(storedUserData);
   }, []);
@@ -183,14 +190,15 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
   }, [hydration]);
 
   const catalogApps = useMemo(() => {
-    const allApps = [...baseCatalog, ...userData.customApps];
+    const cataloguePart = settings.hideDefaultApps ? [] : baseCatalog;
+    const allApps = [...cataloguePart, ...userData.customApps];
     return ensureUniqueAppIds(
       allApps.map((app) => ({
         ...app,
         origin: app.origin ?? "catalog",
       }))
     );
-  }, [baseCatalog, userData.customApps]);
+  }, [baseCatalog, userData.customApps, settings.hideDefaultApps]);
 
   const { visible: visibleApps, hidden: hiddenApps } = useMemo(
     () => splitApps(catalogApps, userData.hiddenAppIds),
@@ -370,6 +378,7 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
         glassTintColor: input.glassTintColor,
         glassTintOpacity: input.glassTintOpacity,
         hasCompletedSetup: true,
+        hideDefaultApps: input.hideDefaultApps,
       });
 
       const nextPageSize = normalizePageSize(input.pageSize);
@@ -441,6 +450,18 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
     },
     [catalogApps]
   );
+
+  const removeCustomApp = useCallback((appId: string) => {
+    setUserData((prev) => {
+      const next = {
+        ...prev,
+        customApps: prev.customApps.filter((app) => app.id !== appId),
+        hiddenAppIds: prev.hiddenAppIds.filter((id) => id !== appId),
+      };
+      saveUserDataToStorage(next);
+      return next;
+    });
+  }, []);
 
   const submitCustomApp = useCallback(
     (input: CustomAppInput) => {
@@ -619,6 +640,7 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
     closeHiddenApps,
     hideApp,
     showApp,
+    removeCustomApp,
     openContextMenu,
     closeContextMenu,
     resetActiveIndex,

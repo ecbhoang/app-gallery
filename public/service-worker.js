@@ -1,4 +1,4 @@
-const APP_VERSION = "__APP_VERSION__";
+const APP_VERSION = "0.1.0";
 const CACHE_NAME = `launchpad-gallery-${APP_VERSION}`;
 const BASE_PATH = (() => {
   const scopePath = new URL(self.registration.scope).pathname;

@@ -21,6 +21,7 @@ export type LaunchpadSettings = {
   glassTintColor: string;
   glassTintOpacity: number;
   hasCompletedSetup: boolean;
+  hideDefaultApps: boolean;
 };
 
 export type LaunchpadUserData = {

@@ -113,7 +113,7 @@ export function LaunchpadApp(): JSX.Element {
 
       <LoadingOverlay visible={controller.isLoading} />
 
-      <main className="relative z-10 flex min-h-screen w-full flex-col items-center px-4 pb-8 pt-12 sm:pt-16">
+      <main className="relative z-10 flex min-h-screen w-full flex-col items-center px-4 pb-8 pt-24 sm:pt-16">
         <LaunchpadHeader
           searchRef={searchRef}
           defaultValue={searchTerm}

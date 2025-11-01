@@ -71,6 +71,7 @@ export const defaultSettings: LaunchpadSettings = {
   glassTintColor: "#1e293b",
   glassTintOpacity: 0.55,
   hasCompletedSetup: false,
+  hideDefaultApps: false,
 };
 
 export const defaultUserData: LaunchpadUserData = {
