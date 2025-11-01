@@ -22,7 +22,22 @@ const PRECACHE_ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(PRECACHE_ASSETS))
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(
+        PRECACHE_ASSETS.map((asset) =>
+          fetch(asset)
+            .then((response) => {
+              if (!response.ok) {
+                throw new Error(`Failed to fetch ${asset}`);
+              }
+              return cache.put(asset, response.clone());
+            })
+            .catch(() => {
+              // ignore missing assets during install (dev mode)
+            })
+        )
+      )
+    )
   );
   self.skipWaiting();
 });
