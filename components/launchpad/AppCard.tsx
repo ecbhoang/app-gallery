@@ -11,6 +11,7 @@ import type { GlassTintStyle } from "@hooks/useLaunchpadView";
 type AppCardProps = {
   app: LaunchpadApp;
   isActive: boolean;
+  isDimmed: boolean;
   onClick: () => void;
   onDoubleClick: () => void;
   onContextMenu: (event: ReactMouseEvent<HTMLButtonElement>) => void;
@@ -24,6 +25,7 @@ type AppCardProps = {
 export function AppCard({
   app,
   isActive,
+  isDimmed,
   onClick,
   onDoubleClick,
   onContextMenu,
@@ -40,7 +42,8 @@ export function AppCard({
     layoutVariant === "list" &&
       "flex w-full items-center gap-4 px-4 py-3 text-left hover:border-white/20",
     layoutVariant === "grid" && isActive && "translate-y-1 scale-105",
-    layoutVariant === "list" && isActive && "shadow-lg"
+    layoutVariant === "list" && isActive && "shadow-lg",
+    isDimmed && "pointer-events-none opacity-40 blur-sm"
   );
 
   const iconWrapperClasses = clsx(
@@ -59,6 +62,8 @@ export function AppCard({
     <button
       type="button"
       className={classes}
+      disabled={isDimmed}
+      aria-disabled={isDimmed}
       onClick={onClick}
       onDoubleClick={onDoubleClick}
       onContextMenu={onContextMenu}

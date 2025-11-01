@@ -1,4 +1,5 @@
 /* eslint-disable @next/next/no-img-element */
+import clsx from "clsx";
 import type {
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,
@@ -33,6 +34,11 @@ export function HiddenAppsModal({
   onPointerUp,
   glassTint,
 }: HiddenAppsModalProps) {
+  const isContextMenuOpen = Boolean(controller.contextMenu.appId);
+  const shouldDimHiddenItems =
+    isContextMenuOpen && controller.contextMenu.source === "hidden";
+  const contextMenuTargetId = controller.contextMenu.appId;
+
   return (
     <Modal
       open={controller.modals.hiddenApps}
@@ -66,13 +72,25 @@ export function HiddenAppsModal({
                 <button
                   key={app.id}
                   type="button"
-                  className="group flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 text-left transition hover:border-white/20 hover:bg-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+                  className={clsx(
+                    "group flex items-center justify-between rounded-2xl border border-white/10 bg-slate-900/50 px-4 py-3 text-left transition hover:border-white/20 hover:bg-slate-900/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40",
+                    shouldDimHiddenItems &&
+                      app.id !== contextMenuTargetId &&
+                      "pointer-events-none opacity-40 blur-sm"
+                  )}
+                  disabled={
+                    shouldDimHiddenItems && app.id !== contextMenuTargetId
+                  }
+                  aria-disabled={
+                    shouldDimHiddenItems && app.id !== contextMenuTargetId
+                  }
                   onClick={() => controller.showApp(app.id)}
                   onContextMenu={(event) => onContextMenu(event, app, "hidden")}
                   onPointerDown={(event) => onPointerDown(event, app, "hidden")}
                   onPointerUp={onPointerUp}
                   onPointerLeave={onPointerUp}
                   onPointerCancel={onPointerUp}
+                  data-app-id={app.id}
                 >
                   <div className="flex items-center gap-3">
                     <span

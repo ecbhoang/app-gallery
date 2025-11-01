@@ -61,6 +61,8 @@ export function LaunchpadApp(): JSX.Element {
   } = controller;
 
   const isContextMenuOpen = Boolean(contextMenu.appId);
+  const contextMenuTargetId = contextMenu.appId;
+  const shouldDimGridCards = isContextMenuOpen && contextMenu.source === "grid";
   const isListLayout = isMobileLayout && controller.settings.mobileLayout === "list";
   const cardLayoutVariant = isListLayout ? "list" : "grid";
 
@@ -160,6 +162,9 @@ export function LaunchpadApp(): JSX.Element {
                         key={app.id}
                         app={app}
                         isActive={isActive}
+                        isDimmed={
+                          shouldDimGridCards && app.id !== contextMenuTargetId
+                        }
                         onClick={() => openApp(app)}
                         onDoubleClick={() => openApp(app)}
                         onContextMenu={(event) =>
@@ -205,8 +210,15 @@ export function LaunchpadApp(): JSX.Element {
       />
       {isContextMenuOpen && (
         <div
-          className="fixed inset-0 z-40"
-          onPointerDown={closeContextMenu}
+          className="fixed inset-0 z-40 bg-transparent"
+          role="presentation"
+          onPointerDown={(event) => {
+            event.stopPropagation();
+          }}
+          onClick={(event) => {
+            event.stopPropagation();
+            closeContextMenu();
+          }}
           onContextMenu={(event) => event.preventDefault()}
         />
       )}
