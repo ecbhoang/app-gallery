@@ -1,0 +1,243 @@
+[
+  {
+     "id": "app-store",
+     "name": "App Store",
+     "description": "Find and download the latest apps.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/mac-os.png",
+     "url": "https://www.apple.com/app-store/",
+     "tags": ["store", "download", "apps"]
+   },
+   {
+     "id": "calendar",
+     "name": "Calendar",
+     "description": "Organise events and reminders.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/calendar.png",
+     "url": "https://calendar.google.com/",
+     "tags": ["schedule", "planning"]
+   },
+   {
+     "id": "mail",
+     "name": "Mail",
+     "description": "Manage your inbox across accounts.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/apple-mail.png",
+     "url": "https://mail.google.com/",
+     "tags": ["email", "communication"]
+   },
+   {
+     "id": "safari",
+     "name": "Safari",
+     "description": "Browse the web with privacy.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/compass.png",
+     "url": "https://www.apple.com/safari/",
+     "tags": ["browser", "web"]
+   },
+   {
+     "id": "notes",
+     "name": "Notes",
+     "description": "Capture ideas, checklists, and sketches.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/note.png",
+     "url": "https://www.notion.so/",
+     "tags": ["notes", "writing", "productivity"]
+   },
+   {
+     "id": "reminders",
+     "name": "Reminders",
+     "description": "Keep track of tasks with alerts.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/reminders.png",
+     "url": "https://todoist.com/",
+     "tags": ["tasks", "todo", "productivity"]
+   },
+   {
+     "id": "messages",
+     "name": "Messages",
+     "description": "Chat with friends and colleagues.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/imessage.png",
+     "url": "https://messages.google.com/web",
+     "tags": ["chat", "communication"]
+   },
+   {
+     "id": "facetime",
+     "name": "FaceTime",
+     "description": "Video call with crystal clarity.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/facetime.png",
+     "url": "https://zoom.us/",
+     "tags": ["video", "communication"]
+   },
+   {
+     "id": "photos",
+     "name": "Photos",
+     "description": "Browse and organise your photo library.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/picture.png",
+     "url": "https://photos.google.com/",
+     "tags": ["media", "gallery"]
+   },
+   {
+     "id": "music",
+     "name": "Music",
+     "description": "Stream your favourite songs.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/apple-music.png",
+     "url": "https://music.apple.com/",
+     "tags": ["audio", "entertainment"]
+   },
+   {
+     "id": "podcasts",
+     "name": "Podcasts",
+     "description": "Discover shows and listen on the go.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/podcast.png",
+     "url": "https://podcasts.apple.com/",
+     "tags": ["audio", "learning"]
+   },
+   {
+     "id": "tv",
+     "name": "TV",
+     "description": "Watch series and movies anywhere.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/tv.png",
+     "url": "https://tv.apple.com/",
+     "tags": ["video", "entertainment"]
+   },
+   {
+     "id": "maps",
+     "name": "Maps",
+     "description": "Navigate cities and find places.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/apple-maps.png",
+     "url": "https://maps.google.com/",
+     "tags": ["navigation", "travel"]
+   },
+   {
+     "id": "weather",
+     "name": "Weather",
+     "description": "Get accurate forecasts and alerts.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/partly-cloudy-day.png",
+     "url": "https://weather.com/",
+     "tags": ["forecast", "travel"]
+   },
+   {
+     "id": "news",
+     "name": "News",
+     "description": "Stay informed with breaking news.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/news.png",
+     "url": "https://news.ycombinator.com/",
+     "tags": ["reading", "information"]
+   },
+   {
+     "id": "files",
+     "name": "Files",
+     "description": "Access cloud drives and local documents.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/opened-folder.png",
+     "url": "https://www.icloud.com/iclouddrive/",
+     "tags": ["storage", "cloud"]
+   },
+   {
+     "id": "contacts",
+     "name": "Contacts",
+     "description": "Keep your address book tidy.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/contacts.png",
+     "url": "https://contacts.google.com/",
+     "tags": ["people", "communication"]
+   },
+   {
+     "id": "calculator",
+     "name": "Calculator",
+     "description": "Calculate, convert, and crunch numbers.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/calculator.png",
+     "url": "https://www.desmos.com/scientific",
+     "tags": ["math", "utility"]
+   },
+   {
+     "id": "terminal",
+     "name": "Terminal",
+     "description": "Command-line power at your fingertips.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/console.png",
+     "url": "https://warp.dev/",
+     "tags": ["developer", "tools"]
+   },
+   {
+     "id": "settings",
+     "name": "Settings",
+     "description": "Fine-tune system preferences.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/settings.png",
+     "url": "https://www.apple.com/macos/",
+     "tags": ["system", "preferences"]
+   },
+   {
+     "id": "xcode",
+     "name": "Xcode",
+     "description": "Build apps for Apple platforms.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/xcode.png",
+     "url": "https://developer.apple.com/xcode/",
+     "tags": ["developer", "ide"]
+   },
+   {
+     "id": "numbers",
+     "name": "Numbers",
+     "description": "Create polished spreadsheets.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/numbers.png",
+     "url": "https://www.apple.com/numbers/",
+     "tags": ["productivity", "spreadsheets"]
+   },
+   {
+     "id": "pages",
+     "name": "Pages",
+     "description": "Design beautiful documents.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/pages.png",
+     "url": "https://www.apple.com/pages/",
+     "tags": ["writing", "documents"]
+   },
+   {
+     "id": "keynote",
+     "name": "Keynote",
+     "description": "Craft stunning presentations.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/keynote.png",
+     "url": "https://www.apple.com/keynote/",
+     "tags": ["presentations", "design"]
+   },
+   {
+     "id": "shortcuts",
+     "name": "Shortcuts",
+     "description": "Automate tasks with powerful workflows.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/shortcut.png",
+     "url": "https://www.icloud.com/shortcuts/",
+     "tags": ["automation", "productivity"]
+   },
+   {
+     "id": "home",
+     "name": "Home",
+     "description": "Manage your smart devices.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/home-automation.png",
+     "url": "https://home.app/",
+     "tags": ["smart", "automation"]
+   },
+   {
+     "id": "stocks",
+     "name": "Stocks",
+     "description": "Track market trends and watchlists.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/real-time-traffic.png",
+     "url": "https://finance.yahoo.com/",
+     "tags": ["finance", "market"]
+   },
+   {
+     "id": "voice-memos",
+     "name": "Voice Memos",
+     "description": "Record ideas and conversations.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/microphone.png",
+     "url": "https://vocaroo.com/",
+     "tags": ["audio", "record"]
+   },
+   {
+     "id": "books",
+     "name": "Books",
+     "description": "Read ebooks and audiobooks.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/apple-books.png",
+     "url": "https://books.apple.com/",
+     "tags": ["reading", "learning"]
+   },
+   {
+     "id": "arcade",
+     "name": "Arcade",
+     "description": "Play premium games without ads.",
+     "icon": "https://img.icons8.com/ios-filled/100/ffffff/joystick.png",
+     "url": "https://www.apple.com/apple-arcade/",
+     "tags": ["games", "entertainment"]
+   }
+ ]
+ 

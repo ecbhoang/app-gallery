@@ -11,7 +11,7 @@ export function Modal({ open, onClose, ariaLabel, children }: ModalProps) {
   if (!open) return null;
   return (
     <div
-      className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/80 p-4 backdrop-blur-xl"
+      className="fixed inset-0 z-40 flex items-center justify-center bg-transparent p-4"
       role="dialog"
       aria-label={ariaLabel}
       onClick={(event) => {

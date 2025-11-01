@@ -294,6 +294,13 @@ export function SettingsModal({ controller }: SettingsModalProps) {
               Cancel
             </button>
             <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="rounded-2xl border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
+            >
+              Reload App
+            </button>
+            <button
               type="submit"
               className="rounded-2xl bg-gradient-to-r from-sky-400/80 via-blue-500/80 to-fuchsia-500/80 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
             >

@@ -11,11 +11,17 @@ body {
     sans-serif;
 
   -webkit-touch-callout: none;
+  scrollbar-width: none; /* Firefox */
 }
 
 img {
   -webkit-user-drag: none;
   user-select: none;
+}
+
+/* Chrome, Safari */
+body::-webkit-scrollbar {
+  display: none;
 }
 
 .loading-dot {
