@@ -443,8 +443,21 @@ export function useLaunchpadView({
     if (typeof document === "undefined") return undefined;
     const handleContextMenu = (event: MouseEvent) => {
       if (event.defaultPrevented) return;
+
+      const path = event.composedPath();
+      const allowsCustomMenu = path.some(
+        (node) =>
+          node instanceof HTMLElement &&
+          (node.dataset.appId || node.dataset.launchpadContextMenu === "allow")
+      );
+
+      if (allowsCustomMenu) {
+        return;
+      }
+
       event.preventDefault();
     };
+
     document.addEventListener("contextmenu", handleContextMenu, {
       capture: true,
     });

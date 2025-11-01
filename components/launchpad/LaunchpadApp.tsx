@@ -130,7 +130,7 @@ export function LaunchpadApp(): JSX.Element {
 
         <section
           ref={gridViewportRef}
-          className="relative flex w-full max-w-5xl flex-1 flex-col gap-10 overflow-hidden"
+          className="relative pt-2 flex w-full max-w-5xl flex-1 flex-col gap-10 overflow-hidden"
         >
           <div
             ref={pagesWrapperRef}
