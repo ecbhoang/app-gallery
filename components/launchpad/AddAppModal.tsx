@@ -174,7 +174,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
                 <label
                   key={icon}
                   className={clsx(
-                    "group flex cursor-pointer flex-col items-center gap-3 rounded-2xl border border-white/10 bg-white/5 p-3 text-xs text-slate-200 transition hover:border-white/20 hover:bg-white/10",
+                    "group flex cursor-pointer flex-col items-center rounded-2xl bg-slate-900/40  p-3 transition hover:bg-white/10",
                     formState.iconChoice === icon && "border-sky-400/60"
                   )}
                 >
@@ -192,11 +192,8 @@ export function AddAppModal({ controller }: AddAppModalProps) {
                     }
                     className="peer sr-only text-base"
                   />
-                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/40 p-3">
+                  <span className="flex h-14 w-14 items-center justify-center rounded-2xl p-2">
                     <img src={icon} alt="" className="h-full w-full object-contain" />
-                  </span>
-                  <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
-                    Preset
                   </span>
                 </label>
               ))}

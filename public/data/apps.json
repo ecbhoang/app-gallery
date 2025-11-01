@@ -99,7 +99,7 @@
     "id": "maps",
     "name": "Maps",
     "description": "Navigate cities and find places.",
-    "icon": "https://img.icons8.com/ios-filled/100/ffffff/apple-maps.png",
+    "icon": "",
     "url": "https://maps.google.com/",
     "tags": ["navigation", "travel"]
   },
@@ -171,7 +171,7 @@
     "id": "numbers",
     "name": "Numbers",
     "description": "Create polished spreadsheets.",
-    "icon": "https://img.icons8.com/ios-filled/100/ffffff/numbers.png",
+    "icon": "",
     "url": "https://www.apple.com/numbers/",
     "tags": ["productivity", "spreadsheets"]
   },
@@ -179,7 +179,7 @@
     "id": "pages",
     "name": "Pages",
     "description": "Design beautiful documents.",
-    "icon": "https://img.icons8.com/ios-filled/100/ffffff/pages.png",
+    "icon": "",
     "url": "https://www.apple.com/pages/",
     "tags": ["writing", "documents"]
   },
@@ -187,7 +187,7 @@
     "id": "keynote",
     "name": "Keynote",
     "description": "Craft stunning presentations.",
-    "icon": "https://img.icons8.com/ios-filled/100/ffffff/keynote.png",
+    "icon": "",
     "url": "https://www.apple.com/keynote/",
     "tags": ["presentations", "design"]
   },
@@ -211,7 +211,6 @@
     "id": "stocks",
     "name": "Stocks",
     "description": "Track market trends and watchlists.",
-    "icon": "https://img.icons8.com/ios-filled/100/ffffff/real-time-traffic.png",
     "url": "https://finance.yahoo.com/",
     "tags": ["finance", "market"]
   },
@@ -227,7 +226,7 @@
     "id": "books",
     "name": "Books",
     "description": "Read ebooks and audiobooks.",
-    "icon": "https://img.icons8.com/ios-filled/100/ffffff/apple-books.png",
+    "icon": "",
     "url": "https://books.apple.com/",
     "tags": ["reading", "learning"]
   },

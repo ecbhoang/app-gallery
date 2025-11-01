@@ -18,6 +18,7 @@ type AppCardProps = {
   onPointerUp: () => void;
   onFocus: () => void;
   glassTint: GlassTintStyle;
+  layoutVariant: "grid" | "list";
 };
 
 export function AppCard({
@@ -30,10 +31,28 @@ export function AppCard({
   onPointerUp,
   onFocus,
   glassTint,
+  layoutVariant,
 }: AppCardProps) {
   const classes = clsx(
-    "app-card group flex select-none flex-col items-center justify-center gap-3 rounded-2xl sm:px-4 sm:py-2 text-slate-100 transition-all duration-300 hover:-translate-y-1 focus-visible:outline-none focus-visible:ring-0",
-    isActive && "translate-y-1 scale-105"
+    "app-card group select-none rounded-2xl text-slate-100 transition-all duration-300 focus-visible:outline-none focus-visible:ring-0",
+    layoutVariant === "grid" &&
+      "flex flex-col items-center justify-center gap-3 sm:px-4 sm:py-2 hover:-translate-y-1",
+    layoutVariant === "list" &&
+      "flex w-full items-center gap-4 px-4 py-3 text-left hover:border-white/20",
+    layoutVariant === "grid" && isActive && "translate-y-1 scale-105",
+    layoutVariant === "list" && isActive && "shadow-lg"
+  );
+
+  const iconWrapperClasses = clsx(
+    "relative flex items-center justify-center border border-white/10 bg-white/10 transition duration-300",
+    layoutVariant === "grid" && "h-16 w-16 rounded-3xl p-3 group-hover:scale-105",
+    layoutVariant === "list" && "h-12 w-12 rounded-2xl p-2 group-hover:scale-105 flex-shrink-0"
+  );
+
+  const labelClasses = clsx(
+    "truncate text-sm font-medium",
+    layoutVariant === "grid" && "max-w-full text-center",
+    layoutVariant === "list" && "flex-1 text-left h-full items-center justify-start flex border-b border-white/10"
   );
 
   return (
@@ -51,7 +70,7 @@ export function AppCard({
       data-app-id={app.id}
     >
       <span
-        className="flex h-16 w-16 relative items-center justify-center rounded-3xl border border-white/10 bg-white/10 p-3 transition duration-300 group-hover:scale-105"
+        className={iconWrapperClasses}
         style={glassTint}
       >
         <img
@@ -68,9 +87,7 @@ export function AppCard({
           </span>
         )}
       </span>
-      <span className="max-w-full truncate text-center text-sm font-medium">
-        {app.name}
-      </span>
+      <span className={labelClasses}>{app.name}</span>
     </button>
   );
 }

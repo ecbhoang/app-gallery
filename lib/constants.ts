@@ -35,7 +35,6 @@ export const BASE_ICON_LIBRARY: string[] = [
   "https://img.icons8.com/ios-filled/100/ffffff/apple-music.png",
   "https://img.icons8.com/ios-filled/100/ffffff/podcast.png",
   "https://img.icons8.com/ios-filled/100/ffffff/tv.png",
-  "https://img.icons8.com/ios-filled/100/ffffff/apple-maps.png",
   "https://img.icons8.com/ios-filled/100/ffffff/partly-cloudy-day.png",
   "https://img.icons8.com/ios-filled/100/ffffff/news.png",
   "https://img.icons8.com/ios-filled/100/ffffff/opened-folder.png",
@@ -44,14 +43,9 @@ export const BASE_ICON_LIBRARY: string[] = [
   "https://img.icons8.com/ios-filled/100/ffffff/console.png",
   "https://img.icons8.com/ios-filled/100/ffffff/settings.png",
   "https://img.icons8.com/ios-filled/100/ffffff/xcode.png",
-  "https://img.icons8.com/ios-filled/100/ffffff/numbers.png",
-  "https://img.icons8.com/ios-filled/100/ffffff/pages.png",
-  "https://img.icons8.com/ios-filled/100/ffffff/keynote.png",
   "https://img.icons8.com/ios-filled/100/ffffff/shortcut.png",
   "https://img.icons8.com/ios-filled/100/ffffff/home-automation.png",
-  "https://img.icons8.com/ios-filled/100/ffffff/real-time-traffic.png",
   "https://img.icons8.com/ios-filled/100/ffffff/microphone.png",
-  "https://img.icons8.com/ios-filled/100/ffffff/apple-books.png",
   "https://img.icons8.com/ios-filled/100/ffffff/joystick.png",
   DEFAULT_ICON,
 ];
@@ -72,6 +66,7 @@ export const defaultSettings: LaunchpadSettings = {
   glassTintOpacity: 0.55,
   hasCompletedSetup: false,
   hideDefaultApps: false,
+  mobileLayout: "grid",
 };
 
 export const defaultUserData: LaunchpadUserData = {

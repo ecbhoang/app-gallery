@@ -1,7 +1,10 @@
+import clsx from "clsx";
 import { useEffect, useState, type FormEvent } from "react";
 import type { LaunchpadController } from "@hooks/useLaunchpadState";
 import { PRESET_BACKGROUND_OPTIONS } from "@lib/constants";
 import CloseIcon from "@icons/CloseIcon";
+import GridIcon from "@icons/GridIcon";
+import ListIcon from "@icons/ListIcon";
 import { Modal } from "@components/launchpad/Modal";
 
 type SettingsModalProps = {
@@ -44,8 +47,16 @@ export function SettingsModal({ controller }: SettingsModalProps) {
   const [pageSize, setPageSize] = useState(
     controller.desktopPageSize.toString()
   );
+  const [mobileLayout, setMobileLayout] = useState(
+    controller.settings.mobileLayout
+  );
 
-  const { settings: controllerSettings, modals, desktopPageSize } = controller;
+  const {
+    settings: controllerSettings,
+    modals,
+    desktopPageSize,
+    isMobileLayout: controllerIsMobile,
+  } = controller;
 
   useEffect(() => {
     if (!modals.settings) return;
@@ -68,6 +79,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
     setGlassTintColor(controllerSettings.glassTintColor);
     setPageSize(desktopPageSize.toString());
     setHideDefaultApps(controllerSettings.hideDefaultApps ?? false);
+    setMobileLayout(controllerSettings.mobileLayout);
   }, [modals.settings, controllerSettings, desktopPageSize]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -83,6 +95,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
       glassTintOpacity: glassOpacity,
       pageSize: Number(pageSize),
       hideDefaultApps,
+      mobileLayout,
     });
   };
 
@@ -266,20 +279,76 @@ export function SettingsModal({ controller }: SettingsModalProps) {
             />
           </section>
 
-          <section className="space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-              Desktop page size
-            </h3>
-            <input
-              type="number"
-              min={14}
-              max={56}
-              step={7}
-              value={pageSize}
-              onChange={(event) => setPageSize(event.target.value)}
-              className="w-24 rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 focus:border-sky-400/40 focus:outline-none focus:ring-0"
-            />
-          </section>
+          {!controllerIsMobile && (
+            <section className="space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Desktop page size
+              </h3>
+              <input
+                type="number"
+                min={14}
+                max={56}
+                step={7}
+                value={pageSize}
+                onChange={(event) => setPageSize(event.target.value)}
+                className="w-24 rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+              />
+            </section>
+          )}
+
+          {controllerIsMobile && (
+            <section className="space-y-4">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Mobile view style
+              </h3>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-2">
+                <label
+                  className={clsx(
+                    "group flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/40 p-4 text-sm transition hover:border-white/20 hover:bg-slate-900/60",
+                    mobileLayout === "grid" && "border-sky-400/40 bg-slate-900/70 shadow-lg"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="mobileLayout"
+                    value="grid"
+                    checked={mobileLayout === "grid"}
+                    onChange={() => setMobileLayout("grid")}
+                    className="sr-only"
+                  />
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-slate-100 transition group-hover:bg-white/15">
+                    <GridIcon className="h-6 w-6" />
+                  </span>
+                  <span className="text-sm font-medium text-slate-100">Grid</span>
+                  <span className="text-xs text-center text-slate-400">
+                    Arrange apps in tiles.
+                  </span>
+                </label>
+                <label
+                  className={clsx(
+                    "group flex cursor-pointer flex-col items-center gap-2 rounded-2xl border border-white/10 bg-slate-900/40 p-4 text-sm transition hover:border-white/20 hover:bg-slate-900/60",
+                    mobileLayout === "list" && "border-sky-400/40 bg-slate-900/70 shadow-lg"
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="mobileLayout"
+                    value="list"
+                    checked={mobileLayout === "list"}
+                    onChange={() => setMobileLayout("list")}
+                    className="sr-only"
+                  />
+                  <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/10 text-slate-100 transition group-hover:bg-white/15">
+                    <ListIcon className="h-6 w-6" />
+                  </span>
+                  <span className="text-sm font-medium text-slate-100">List</span>
+                  <span className="text-xs text-center text-slate-400">
+                    Show apps in a single column.
+                  </span>
+                </label>
+              </div>
+            </section>
+          )}
 
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">

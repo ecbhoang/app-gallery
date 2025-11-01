@@ -30,10 +30,11 @@ export function LaunchpadHeader({
         <SearchIcon className="h-5 w-5 text-slate-300" />
         <input
           ref={searchRef}
+          id="search"
           type="search"
           placeholder="Search app..."
           autoComplete="off"
-          className="w-full border-0 bg-transparent text-slate-100 placeholder:text-slate-500 text-base focus:border-transparent focus:outline-none focus:ring-0"
+          className="w-full border-0 bg-transparent text-white placeholder:text-white text-base focus:border-transparent focus:outline-none focus:ring-0"
           defaultValue={defaultValue}
           onChange={(event) => onSearchChange(event.target.value)}
         />

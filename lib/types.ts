@@ -22,6 +22,7 @@ export type LaunchpadSettings = {
   glassTintOpacity: number;
   hasCompletedSetup: boolean;
   hideDefaultApps: boolean;
+  mobileLayout: "grid" | "list";
 };
 
 export type LaunchpadUserData = {

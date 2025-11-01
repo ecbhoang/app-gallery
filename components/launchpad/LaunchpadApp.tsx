@@ -61,6 +61,8 @@ export function LaunchpadApp(): JSX.Element {
   } = controller;
 
   const isContextMenuOpen = Boolean(contextMenu.appId);
+  const isListLayout = isMobileLayout && controller.settings.mobileLayout === "list";
+  const cardLayoutVariant = isListLayout ? "list" : "grid";
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -139,10 +141,14 @@ export function LaunchpadApp(): JSX.Element {
             {pages.map((page, pageIndex) => (
               <div
                 key={pageIndex}
-                className="flex w-full items-stretch justify-center lg:h-full lg:shrink-0"
+                className={`flex w-full items-stretch ${isListLayout ? "justify-start" : "justify-center"} lg:h-full lg:shrink-0`}
               >
                 <div
-                  className="grid w-full gap-8 sm:gap-6 grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
+                  className={
+                    isListLayout
+                      ? "flex w-full flex-col gap-2"
+                      : "grid w-full gap-8 sm:gap-6 grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
+                  }
                 >
                   {page.map((app, index) => {
                     const globalIndex = isMobileLayout
@@ -165,6 +171,7 @@ export function LaunchpadApp(): JSX.Element {
                         onPointerUp={handleCardPointerUp}
                         onFocus={() => setActiveIndex(globalIndex)}
                         glassTint={glassTint}
+                        layoutVariant={cardLayoutVariant}
                       />
                     );
                   })}

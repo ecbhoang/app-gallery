@@ -59,6 +59,7 @@ export type SettingsFormInput = {
   glassTintOpacity: number;
   pageSize: number;
   hideDefaultApps: boolean;
+  mobileLayout: "grid" | "list";
 };
 
 type LaunchpadModalState = {
@@ -88,6 +89,7 @@ export type LaunchpadController = {
   editingApp: LaunchpadApp | null;
   iconLibrary: string[];
   desktopPageSize: number;
+  isMobileLayout: boolean;
   setSearchTerm: (term: string) => void;
   setPage: (page: number) => void;
   setActiveIndex: (index: number) => void;
@@ -379,6 +381,7 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
         glassTintOpacity: input.glassTintOpacity,
         hasCompletedSetup: true,
         hideDefaultApps: input.hideDefaultApps,
+        mobileLayout: input.mobileLayout,
       });
 
       const nextPageSize = normalizePageSize(input.pageSize);
@@ -625,6 +628,7 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
     editingApp,
     iconLibrary,
     desktopPageSize,
+    isMobileLayout,
     setSearchTerm,
     setPage,
     setActiveIndex,

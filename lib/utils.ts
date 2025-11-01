@@ -273,6 +273,12 @@ export function updateSettingsFromForm(
     hideDefaultApps: Boolean(
       partial.hideDefaultApps ?? base.hideDefaultApps ?? defaultSettings.hideDefaultApps
     ),
+    mobileLayout:
+      partial.mobileLayout === "list"
+        ? "list"
+        : partial.mobileLayout === "grid"
+          ? "grid"
+          : base.mobileLayout ?? defaultSettings.mobileLayout,
   };
 }
 
