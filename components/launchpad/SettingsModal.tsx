@@ -1,7 +1,7 @@
 import clsx from "clsx";
 import { useEffect, useState, type FormEvent } from "react";
 import type { LaunchpadController } from "@hooks/useLaunchpadState";
-import { PRESET_BACKGROUND_OPTIONS } from "@lib/constants";
+import { PRESET_BACKGROUND_OPTIONS, VERSION_STORAGE_KEY } from "@lib/constants";
 import CloseIcon from "@icons/CloseIcon";
 import GridIcon from "@icons/GridIcon";
 import ListIcon from "@icons/ListIcon";
@@ -97,6 +97,57 @@ export function SettingsModal({ controller }: SettingsModalProps) {
       hideDefaultApps,
       mobileLayout,
     });
+  };
+
+  const handleSoftwareUpdate = async () => {
+    if (typeof window === "undefined") return;
+
+    try {
+      window.localStorage.removeItem(VERSION_STORAGE_KEY);
+    } catch (error) {
+      console.warn("Không thể xoá cache version trong localStorage", error);
+    }
+
+    if (typeof caches !== "undefined") {
+      try {
+        const cacheKeys = await caches.keys();
+        await Promise.all(
+          cacheKeys
+            .filter((key) => key.startsWith("launchpad-gallery-"))
+            .map((key) => caches.delete(key))
+        );
+      } catch (error) {
+        console.warn("Không thể xoá cache assets của service worker", error);
+      }
+    }
+
+    if ("serviceWorker" in navigator) {
+      try {
+        const { serviceWorker } = navigator;
+        if (!serviceWorker) {
+          throw new Error("Service worker container unavailable");
+        }
+
+        const registrations = serviceWorker.getRegistrations
+          ? await serviceWorker.getRegistrations()
+          : serviceWorker.getRegistration
+            ? await serviceWorker.getRegistration().then((registration) =>
+                registration ? [registration] : []
+              )
+            : [];
+
+        for (const registration of registrations) {
+          registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+          await registration.update().catch(() => {
+            // Ignore failed updates, reload will fetch latest assets
+          });
+        }
+      } catch (error) {
+        console.warn("Không thể cập nhật service worker", error);
+      }
+    }
+
+    window.location.reload();
   };
 
   return (
@@ -371,6 +422,26 @@ export function SettingsModal({ controller }: SettingsModalProps) {
               </span>
             </label>
           </section>
+
+          <section className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/40 p-4">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <div className="space-y-1">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Software update
+                </h3>
+                <p className="text-sm text-slate-400">
+                  Receive the latest build. Your personal settings and app data will be preserved.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleSoftwareUpdate()}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 sm:w-auto"
+              >
+                Update Now
+              </button>
+            </div>
+          </section>
         </div>
         <div className="flex items-center justify-center sm:justify-between border-t border-white/10 bg-slate-900/80 px-6 py-4 text-sm text-slate-300 sm:px-8">
           <div className="text-[13px] text-slate-500 hidden sm:block">
@@ -383,13 +454,6 @@ export function SettingsModal({ controller }: SettingsModalProps) {
               className="rounded-2xl border border-white/10 bg-transparent px-5 py-2 text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
             >
               Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="rounded-2xl border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
-            >
-              Reload
             </button>
             <button
               type="submit"
