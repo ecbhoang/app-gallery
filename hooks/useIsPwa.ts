@@ -6,10 +6,7 @@ import { isPwaEnvironment, subscribeToPwaChanges } from "@lib/pwa";
  * across supported browsers and platforms.
  */
 export function useIsPwa(): boolean {
-  const [isPwa, setIsPwa] = useState<boolean>(() => {
-    if (typeof window === "undefined") return false;
-    return isPwaEnvironment();
-  });
+  const [isPwa, setIsPwa] = useState<boolean>(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return undefined;
