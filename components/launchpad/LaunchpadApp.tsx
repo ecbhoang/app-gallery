@@ -15,6 +15,7 @@ import { LoadingOverlay } from "@components/launchpad/LoadingOverlay";
 import { PaginationDots } from "@components/launchpad/PaginationDots";
 import { AddAppModal } from "@components/launchpad/AddAppModal";
 import { SettingsModal } from "@components/launchpad/SettingsModal";
+import { VersionBadge } from "@components/launchpad/VersionBadge";
 
 export function LaunchpadApp(): JSX.Element {
   const isMobileLayout = useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -149,6 +150,7 @@ export function LaunchpadApp(): JSX.Element {
         glassTint={glassTint}
       />
       <ContextMenu controller={controller} ref={contextMenuRef} />
+      <VersionBadge />
     </div>
   );
 }

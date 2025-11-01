@@ -37,6 +37,14 @@ Settings and user data are persisted in `localStorage`, matching the behaviour o
 ## Deploying to GitHub Pages
 
 1. Set the repository’s default branch in the workflow (below assumes `main`).
-2. Optional: create a `.env` file for local builds with `NEXT_PUBLIC_BASE_PATH=""` (empty) to mirror production.
+2. Optional: create a `.env` file for local builds with `NEXT_PUBLIC_BASE_PATH=""` (empty) to mirror production and `NEXT_PUBLIC_APP_VERSION=<your version>` if you want to override the default package version.
 3. GitHub Actions workflow (`.github/workflows/deploy.yml`) builds and publishes the `out/` folder to the `gh-pages` branch. It automatically sets `NEXT_PUBLIC_BASE_PATH` to the repository name so asset paths resolve correctly on Pages.
 4. Enable GitHub Pages in repository settings, selecting the `gh-pages` branch and the root directory.
+
+During CI the workflow exposes the version as `v<run_number>` which is shown in the bottom-left badge in the UI.
+
+## Progressive Web App
+
+- The project ships with a custom service worker (`public/service-worker.js`) and a manifest located at `public/manifest.webmanifest`.
+- When you run `npm run export` (locally or in CI), the service worker and manifest are emitted with the correct base path so the site is installable as a PWA on GitHub Pages.
+- On first load the app registers the service worker and enables offline caching for core assets.

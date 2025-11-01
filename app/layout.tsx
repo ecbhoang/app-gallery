@@ -10,6 +10,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
+  applicationName: "Launchpad Gallery",
   title: "Launchpad Gallery",
   description:
     "Curate and launch your favorite web tools with a customizable glassmorphism UI.",
@@ -18,6 +19,10 @@ export const metadata: Metadata = {
   icons: {
     icon: DEFAULT_ICON,
     apple: DEFAULT_ICON,
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
   },
 };
 
