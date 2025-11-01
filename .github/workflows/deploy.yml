@@ -31,10 +31,15 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Derive version string
+        run: |
+          VERSION="v${GITHUB_RUN_NUMBER}-${GITHUB_SHA::7}"
+          echo "NEXT_PUBLIC_APP_VERSION=$VERSION" >> $GITHUB_ENV
+          echo "Generated version: $VERSION"
+
       - name: Export static site
         env:
           NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}"
-          NEXT_PUBLIC_APP_VERSION: "v${{ github.run_number }}-${{ github.sha.substr(0,7) }}"
           GITHUB_PAGES: "true"
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: npm run export
