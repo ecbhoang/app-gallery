@@ -37,6 +37,9 @@ jobs:
           echo "NEXT_PUBLIC_APP_VERSION=$VERSION" >> $GITHUB_ENV
           echo "Generated version: $VERSION"
 
+      - name: Inject service worker version
+        run: node scripts/inject-version.js
+
       - name: Export static site
         env:
           NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}"

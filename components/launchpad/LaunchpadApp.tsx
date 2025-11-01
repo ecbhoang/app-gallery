@@ -77,6 +77,33 @@ export function LaunchpadApp(): JSX.Element {
     }
   };
 
+  useEffect(() => {
+    if (!navigator.serviceWorker) return undefined;
+
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type !== "app-version") return;
+      const latestVersion = String(event.data.version ?? "");
+      if (!latestVersion) return;
+      const cached = window.localStorage.getItem(VERSION_STORAGE_KEY);
+      if (cached !== latestVersion) {
+        window.localStorage.setItem(VERSION_STORAGE_KEY, latestVersion);
+        setIsChangeLogOpen(true);
+      }
+    };
+
+    const handleControllerChange = () => {
+      window.location.reload();
+    };
+
+    navigator.serviceWorker.addEventListener("message", handleMessage);
+    navigator.serviceWorker.addEventListener("controllerchange", handleControllerChange);
+
+    return () => {
+      navigator.serviceWorker.removeEventListener("message", handleMessage);
+      navigator.serviceWorker.removeEventListener("controllerchange", handleControllerChange);
+    };
+  }, []);
+
   return (
     <div className="relative min-h-screen w-full select-none">
       <div

@@ -38,10 +38,12 @@ Settings and user data are persisted in `localStorage`, matching the behaviour o
 
 1. Set the repository’s default branch in the workflow (below assumes `main`).
 2. Optional: create a `.env` file for local builds with `NEXT_PUBLIC_BASE_PATH=""` (empty) to mirror production and `NEXT_PUBLIC_APP_VERSION=<your version>` if you want to override the default package version.
-3. GitHub Actions workflow (`.github/workflows/deploy.yml`) builds and publishes the `out/` folder to the `gh-pages` branch. It automatically sets `NEXT_PUBLIC_BASE_PATH` to the repository name so asset paths resolve correctly on Pages, then flattens the exported directory structure and copies `404.html` to provide single-page-app routing on GitHub Pages. (The workflow uses the latest v3/v4 releases of the Pages artifact/deploy actions so it complies with the GitHub-deprecated `upload-artifact@v3`.)
+3. GitHub Actions workflow (`.github/workflows/deploy.yml`) builds and publishes the `out/` folder to the `gh-pages` branch. Nó tự đặt `NEXT_PUBLIC_BASE_PATH` theo tên repo, chạy script `scripts/inject-version.js` để chèn version vào service worker, rồi flatten thư mục export và copy `404.html` nhằm hỗ trợ routing cho SPA. (Workflow đã dùng các bản action mới nhất v3/v4 của Pages artifact/deploy.)
 4. Enable GitHub Pages in repository settings, selecting the `gh-pages` branch and the root directory.
 
-During CI the workflow exposes the version as `v<run_number>` which is shown in the bottom-left badge in the UI.
+Trong CI, version được set thành định dạng `v<run_number>-<commit>`, hiển thị ở góc dưới trái.
+
+> `npm run export` thực chất gọi `next build`, trước đó script `prebuild` sẽ tự chạy `node scripts/inject-version.js` để cập nhật `public/service-worker.js` và tạo `public/version.json` theo biến `NEXT_PUBLIC_APP_VERSION`.
 
 ## Progressive Web App
 
