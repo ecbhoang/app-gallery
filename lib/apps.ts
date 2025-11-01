@@ -13,10 +13,12 @@ export type RawAppResponse = {
 
 export function mapCatalogApps(raw: unknown): LaunchpadApp[] {
   if (!Array.isArray(raw)) return [];
-  return ensureUniqueAppIds(
-    raw
-      .map((entry) => sanitizeAppRecord(entry, "catalog"))
-      .filter((entry): entry is LaunchpadApp => Boolean(entry))
+  return sortAppsByName(
+    ensureUniqueAppIds(
+      raw
+        .map((entry) => sanitizeAppRecord(entry, "catalog"))
+        .filter((entry): entry is LaunchpadApp => Boolean(entry))
+    )
   );
 }
 
@@ -109,4 +111,12 @@ export function getIconLibrary(catalogApps: LaunchpadApp[]): string[] {
     }
   });
   return Array.from(icons);
+}
+
+export function sortAppsByName<T extends Pick<LaunchpadApp, "name">>(
+  apps: T[]
+): T[] {
+  return [...apps].sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: "base" })
+  );
 }

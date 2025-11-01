@@ -105,7 +105,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
         <div className="flex-1 space-y-4 overflow-y-auto px-6 py-6 sm:px-8">
           <label className="flex flex-col gap-2">
             <span className="text-xs uppercase tracking-wide text-slate-400">
-              Name
+              Name *
             </span>
             <input
               type="text"
@@ -120,7 +120,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
           </label>
           <label className="flex flex-col gap-2">
             <span className="text-xs uppercase tracking-wide text-slate-400">
-              URL
+              URL *
             </span>
             <input
               type="string"

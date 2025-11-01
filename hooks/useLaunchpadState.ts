@@ -6,6 +6,7 @@ import {
   getIconLibrary,
   getTotalPages,
   splitApps,
+  sortAppsByName,
 } from "@lib/apps";
 import { DEFAULT_ICON, defaultSettings, defaultUserData } from "@lib/constants";
 import {
@@ -194,12 +195,13 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
   const catalogApps = useMemo(() => {
     const cataloguePart = settings.hideDefaultApps ? [] : baseCatalog;
     const allApps = [...cataloguePart, ...userData.customApps];
-    return ensureUniqueAppIds(
+    const normalized = ensureUniqueAppIds(
       allApps.map((app) => ({
         ...app,
         origin: app.origin ?? "catalog",
       }))
     );
+    return sortAppsByName(normalized);
   }, [baseCatalog, userData.customApps, settings.hideDefaultApps]);
 
   const { visible: visibleApps, hidden: hiddenApps } = useMemo(
