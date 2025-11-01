@@ -39,8 +39,24 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: npm run export
 
+      - name: Flatten export directory for GitHub Pages
+        env:
+          NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}"
+        run: |
+          TARGET="out${NEXT_PUBLIC_BASE_PATH}"
+          if [ -n "$NEXT_PUBLIC_BASE_PATH" ] && [ -d "$TARGET" ]; then
+            echo "Flattening $TARGET into out/"
+            mkdir temp-out
+            cp -R "$TARGET"/. temp-out/
+            rm -rf out
+            mv temp-out out
+          fi
+          if [ -f "out/index.html" ]; then
+            cp out/index.html out/404.html
+          fi
+
       - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
+        uses: actions/upload-pages-artifact@v2
         with:
           path: ./out
 
