@@ -38,7 +38,7 @@ Settings and user data are persisted in `localStorage`, matching the behaviour o
 
 1. Set the repository’s default branch in the workflow (below assumes `main`).
 2. Optional: create a `.env` file for local builds with `NEXT_PUBLIC_BASE_PATH=""` (empty) to mirror production and `NEXT_PUBLIC_APP_VERSION=<your version>` if you want to override the default package version.
-3. GitHub Actions workflow (`.github/workflows/deploy.yml`) builds and publishes the `out/` folder to the `gh-pages` branch. It automatically sets `NEXT_PUBLIC_BASE_PATH` to the repository name so asset paths resolve correctly on Pages, then flattens the exported directory structure and copies `404.html` to provide single-page-app routing on GitHub Pages. (The workflow already uses v2 of the artifact actions, which is required after GitHub deprecated v1/v3.)
+3. GitHub Actions workflow (`.github/workflows/deploy.yml`) builds and publishes the `out/` folder to the `gh-pages` branch. It automatically sets `NEXT_PUBLIC_BASE_PATH` to the repository name so asset paths resolve correctly on Pages, then flattens the exported directory structure and copies `404.html` to provide single-page-app routing on GitHub Pages. (The workflow uses the latest v3/v4 releases of the Pages artifact/deploy actions so it complies with the GitHub-deprecated `upload-artifact@v3`.)
 4. Enable GitHub Pages in repository settings, selecting the `gh-pages` branch and the root directory.
 
 During CI the workflow exposes the version as `v<run_number>` which is shown in the bottom-left badge in the UI.
