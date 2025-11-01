@@ -22,7 +22,7 @@ The app runs on [http://localhost:3000](http://localhost:3000) by default.
 - `npm run build` – produce an optimized production bundle.
 - `npm run start` – run the compiled production build.
 - `npm run lint` – lint the project with the Next.js ESLint preset.
-- `npm run export` – generate the static site inside the `out/` directory (used for GitHub Pages).
+- `npm run export` – shorthand for `next build`; the GitHub Pages workflow handles exporting and flattening.
 
 ## Project Structure
 
