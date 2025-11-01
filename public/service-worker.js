@@ -1,13 +1,22 @@
-const CACHE_NAME = "launchpad-gallery-v1";
-const OFFLINE_FALLBACK = "./index.html";
+const CACHE_NAME = "launchpad-gallery-v2";
+const BASE_PATH = (() => {
+  const scopePath = new URL(self.registration.scope).pathname;
+  if (scopePath === "/") {
+    return "";
+  }
+  return scopePath.endsWith("/") ? scopePath.slice(0, -1) : scopePath;
+})();
+
+const withBase = (path) => `${BASE_PATH}${path}`;
+
+const OFFLINE_FALLBACK = withBase("/index.html");
 const PRECACHE_ASSETS = [
-  "./",
-  "./index.html",
-  "./main.js",
-  "./apps.sample.json",
-  "./default-icon.svg",
-  "./bg-photo-gallery.avif",
-  "./manifest.webmanifest"
+  withBase("/"),
+  withBase("/index.html"),
+  withBase("/default-icon.svg"),
+  withBase("/bg-photo-gallery.avif"),
+  withBase("/manifest.webmanifest"),
+  withBase("/data/apps.json"),
 ];
 
 self.addEventListener("install", (event) => {
@@ -22,7 +31,11 @@ self.addEventListener("activate", (event) => {
     caches
       .keys()
       .then((keys) =>
-        Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))
+        Promise.all(
+          keys
+            .filter((key) => key !== CACHE_NAME)
+            .map((key) => caches.delete(key))
+        )
       )
       .then(() => self.clients.claim())
   );

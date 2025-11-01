@@ -1,14 +1,14 @@
 {
   "name": "Launchpad Gallery",
   "short_name": "Launchpad",
-  "start_url": "./index.html",
+  "start_url": ".",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#0f172a",
   "description": "Curate and launch your favorite web tools with a customizable glassmorphism UI.",
   "icons": [
     {
-      "src": "./default-icon.svg",
+      "src": "default-icon.svg",
       "sizes": "192x192",
       "type": "image/svg+xml"
     }
