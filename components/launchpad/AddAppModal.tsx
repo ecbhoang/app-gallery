@@ -146,7 +146,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
                   description: event.target.value,
                 }))
               }
-              className="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+              className="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
               placeholder="Optional"
             />
           </label>
