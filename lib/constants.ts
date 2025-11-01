@@ -15,6 +15,7 @@ export const SETTINGS_STORAGE_KEY = "launchpad.settings.v1";
 export const USER_DATA_STORAGE_KEY = "launchpad.userdata.v1";
 export const MOBILE_BREAKPOINT = 640;
 export const SCROLL_PAGE_THRESHOLD = 60;
+export const VERSION_STORAGE_KEY = "launchpad.version-cache.v1";
 
 export const DEFAULT_PAGE_SIZE = 28;
 export const MIN_PAGE_SIZE = 14;

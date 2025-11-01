@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import type {
   MouseEvent as ReactMouseEvent,
   PointerEvent as ReactPointerEvent,

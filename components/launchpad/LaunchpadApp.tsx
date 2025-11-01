@@ -1,10 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLaunchpadState } from "@hooks/useLaunchpadState";
 import { useLaunchpadView } from "@hooks/useLaunchpadView";
 import { useMediaQuery } from "@hooks/useMediaQuery";
-import { MOBILE_BREAKPOINT } from "@lib/constants";
+import { MOBILE_BREAKPOINT, VERSION_STORAGE_KEY } from "@lib/constants";
+import { APP_VERSION } from "@lib/version";
 import { AppCard } from "@components/launchpad/AppCard";
 import { ContextMenu } from "@components/launchpad/ContextMenu";
 import { EmptyState } from "@components/launchpad/EmptyState";
@@ -16,6 +17,7 @@ import { PaginationDots } from "@components/launchpad/PaginationDots";
 import { AddAppModal } from "@components/launchpad/AddAppModal";
 import { SettingsModal } from "@components/launchpad/SettingsModal";
 import { VersionBadge } from "@components/launchpad/VersionBadge";
+import { ChangeLogModal } from "@components/launchpad/ChangeLogModal";
 
 export function LaunchpadApp(): JSX.Element {
   const isMobileLayout = useMediaQuery(`(max-width: ${MOBILE_BREAKPOINT}px)`);
@@ -25,6 +27,7 @@ export function LaunchpadApp(): JSX.Element {
   const pagesWrapperRef = useRef<HTMLDivElement>(null);
   const gridViewportRef = useRef<HTMLDivElement>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+  const [isChangeLogOpen, setIsChangeLogOpen] = useState(false);
 
   const {
     overlayStyle,
@@ -53,7 +56,26 @@ export function LaunchpadApp(): JSX.Element {
     totalPages,
     setPage,
     desktopPageSize,
+    closeContextMenu,
+    contextMenu,
   } = controller;
+
+  const isContextMenuOpen = Boolean(contextMenu.appId);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const cachedVersion = window.localStorage.getItem(VERSION_STORAGE_KEY);
+    if (cachedVersion !== APP_VERSION) {
+      setIsChangeLogOpen(true);
+    }
+  }, []);
+
+  const handleCloseChangeLog = () => {
+    setIsChangeLogOpen(false);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(VERSION_STORAGE_KEY, APP_VERSION);
+    }
+  };
 
   return (
     <div className="relative min-h-screen w-full select-none">
@@ -149,8 +171,20 @@ export function LaunchpadApp(): JSX.Element {
         onPointerUp={handleCardPointerUp}
         glassTint={glassTint}
       />
+      {isContextMenuOpen && (
+        <div
+          className="fixed inset-0 z-40"
+          onPointerDown={closeContextMenu}
+          onContextMenu={(event) => event.preventDefault()}
+        />
+      )}
       <ContextMenu controller={controller} ref={contextMenuRef} />
       <VersionBadge />
+      <ChangeLogModal
+        version={APP_VERSION}
+        open={isChangeLogOpen}
+        onClose={handleCloseChangeLog}
+      />
     </div>
   );
 }

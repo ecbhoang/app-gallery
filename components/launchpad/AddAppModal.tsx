@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import { useEffect, useState, type FormEvent } from "react";
 import clsx from "clsx";
 import type { LaunchpadController } from "@hooks/useLaunchpadState";

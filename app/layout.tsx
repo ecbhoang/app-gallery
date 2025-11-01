@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   description:
     "Curate and launch your favorite web tools with a customizable glassmorphism UI.",
   manifest: `${BASE_PATH}/manifest.webmanifest`,
-  themeColor: "#0f172a",
   icons: {
     icon: DEFAULT_ICON,
     apple: DEFAULT_ICON,
@@ -24,6 +23,10 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "black-translucent",
   },
+};
+
+export const viewport = {
+  themeColor: "#0f172a",
 };
 
 type LayoutProps = {

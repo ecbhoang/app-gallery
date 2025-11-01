@@ -73,16 +73,16 @@ export function useLaunchpadView({
     currentPage,
     activeIndex,
     openContextMenu,
-    closeContextMenu,
-    closeSettings,
-    closeAddApp,
-    closeHiddenApps,
-    setPage,
-    openApp,
-    setSearchTerm,
-    resetActiveIndex,
-    advanceActiveIndex,
-  } = controller;
+  closeContextMenu,
+  closeSettings,
+  closeAddApp,
+  closeHiddenApps,
+  setPage,
+  openApp,
+  setSearchTerm,
+  resetActiveIndex,
+  advanceActiveIndex,
+} = controller;
 
   const longPressTimerRef = useRef<number | null>(null);
   const pointerInfoRef = useRef<PointerInfo | null>(null);
@@ -437,6 +437,22 @@ export function useLaunchpadView({
       window.clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+  }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return undefined;
+    const handleContextMenu = (event: MouseEvent) => {
+      if (event.defaultPrevented) return;
+      event.preventDefault();
+    };
+    document.addEventListener("contextmenu", handleContextMenu, {
+      capture: true,
+    });
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu, {
+        capture: true,
+      } as EventListenerOptions);
+    };
   }, []);
 
   return {
