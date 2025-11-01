@@ -61,7 +61,7 @@ export function HiddenAppsModal({
             <CloseIcon className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-6 py-6">
+        <div className="flex-1 overflow-y-auto scrollbar-hide px-6 py-6">
           {controller.hiddenApps.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-white/20 bg-slate-900/40 px-4 py-6 text-center text-sm text-slate-400">
               No hidden apps yet.

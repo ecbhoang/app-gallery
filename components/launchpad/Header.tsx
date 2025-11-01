@@ -3,6 +3,7 @@ import type { GlassTintStyle } from "@hooks/useLaunchpadView";
 import PlusIcon from "@icons/PlusIcon";
 import SearchIcon from "@icons/SearchIcon";
 import SettingsIcon from "@icons/SettingsIcon";
+import { useIsPwa } from "@hooks/useIsPwa";
 
 type LaunchpadHeaderProps = {
   searchRef: RefObject<HTMLInputElement>;
@@ -21,9 +22,10 @@ export function LaunchpadHeader({
   onOpenSettings,
   glassTint,
 }: LaunchpadHeaderProps) {
+  const isPwa = useIsPwa();
   return (
     <header
-      className="fixed max-w-[90%] sm:sticky top-6 z-10 mb-10 flex w-full sm:max-w-5xl items-center gap-3 rounded-3xl border border-white/10 bg-white/5 px-4 py-0 sm:p-4 text-white shadow-2xl/20 backdrop-blur-sm transition-transform duration-300 hover:scale-[1.01]"
+      className={`fixed max-w-[90%] sm:sticky ${isPwa ? ' top-20 ' : ' top-6 '} z-10 mb-10 flex w-full sm:max-w-5xl items-center gap-3 rounded-3xl border border-white/10 bg-white/5 px-4 py-0 sm:p-4 text-white shadow-2xl/20 backdrop-blur-sm transition-transform duration-300 hover:scale-[1.01]`}
       style={glassTint}
     >
       <div className="flex flex-1 items-center gap-1">

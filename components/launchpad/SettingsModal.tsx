@@ -172,7 +172,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
             <CloseIcon className="h-4 w-4" />
           </button>
         </div>
-        <div className="flex-1 space-y-8 overflow-y-auto px-6 py-6 sm:px-8">
+        <div className="flex-1 space-y-8 overflow-y-auto scrollbar-hide px-6 py-6 sm:px-8">
           <section className="space-y-4">
             <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
               Background mode
