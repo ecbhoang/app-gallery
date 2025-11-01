@@ -131,23 +131,20 @@ export function LaunchpadApp(): JSX.Element {
         >
           <div
             ref={pagesWrapperRef}
-            className={`flex flex-1 transition-transform duration-500 ease-out ${
-              isMobileLayout ? "flex-col" : "flex-row"
-            }`}
+            className={`flex flex-1 transition-transform duration-500 ease-out ${isMobileLayout ? "flex-col" : "flex-row"
+              }`}
           >
             {pages.map((page, pageIndex) => (
               <div
                 key={pageIndex}
-                className={`flex w-full items-stretch justify-center ${
-                  isMobileLayout ? "" : "h-full shrink-0"
-                }`}
+                className={`flex w-full items-stretch justify-center ${isMobileLayout ? "" : "h-full shrink-0"
+                  }`}
               >
                 <div
-                  className={`grid w-full gap-6 ${
-                    isMobileLayout
-                      ? "grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
-                      : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
-                  }`}
+                  className={`grid w-full gap-6 ${isMobileLayout
+                    ? "grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
+                    : "grid-cols-3 sm:grid-cols-4 md:grid-cols-6 xl:grid-cols-7"
+                    }`}
                 >
                   {page.map((app, index) => {
                     const globalIndex = isMobileLayout
@@ -187,6 +184,9 @@ export function LaunchpadApp(): JSX.Element {
 
           <EmptyState visible={filteredApps.length === 0} />
         </section>
+        <section>
+          <VersionBadge />
+        </section>
       </main>
 
       <SettingsModal controller={controller} />
@@ -206,7 +206,6 @@ export function LaunchpadApp(): JSX.Element {
         />
       )}
       <ContextMenu controller={controller} ref={contextMenuRef} />
-      <VersionBadge />
       <ChangeLogModal
         version={APP_VERSION}
         open={isChangeLogOpen}

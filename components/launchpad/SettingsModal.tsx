@@ -96,9 +96,6 @@ export function SettingsModal({ controller }: SettingsModalProps) {
         <div className="flex items-center justify-between border-b border-white/10 bg-slate-900/80 px-6 py-4">
           <div>
             <h2 className="text-lg font-semibold">Appearance</h2>
-            <p className="text-xs text-slate-400">
-              Personalise the launchpad backdrop and layout.
-            </p>
           </div>
           <button
             type="button"
@@ -121,7 +118,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
                   value="image"
                   checked={backgroundType === "image"}
                   onChange={() => setBackgroundType("image")}
-                  className="mt-1 h-4 w-4 border-white/20 text-sky-400 focus:ring-sky-400"
+                  className="mt-1 h-4 w-4 border-white/20 text-sky-400 focus:ring-sky-400 text-base"
                 />
                 <span>
                   <span className="font-medium text-slate-100">
@@ -139,7 +136,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
                   value="color"
                   checked={backgroundType === "color"}
                   onChange={() => setBackgroundType("color")}
-                  className="mt-1 h-4 w-4 border-white/20 text-sky-400 focus:ring-sky-400"
+                  className="mt-1 h-4 w-4 border-white/20 text-sky-400 focus:ring-sky-400 text-base"
                 />
                 <span>
                   <span className="font-medium text-slate-100">
@@ -170,7 +167,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
                       value={option}
                       checked={backgroundChoice === option}
                       onChange={() => setBackgroundChoice(option)}
-                      className="sr-only"
+                      className="sr-only text-base"
                     />
                     <div className="overflow-hidden rounded-xl border border-white/10">
                       <div
@@ -196,7 +193,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
                     value="custom"
                     checked={backgroundChoice === "custom"}
                     onChange={() => setBackgroundChoice("custom")}
-                    className="sr-only"
+                    className="sr-only text-base"
                   />
                   <input
                     type="url"
@@ -219,7 +216,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
                 type="color"
                 value={backgroundColor}
                 onChange={(event) => setBackgroundColor(event.target.value)}
-                className="h-12 w-24 cursor-pointer rounded-2xl border border-white/10 bg-transparent"
+                className="h-12 w-24 cursor-pointer rounded-2xl border border-white/10 bg-transparent text-base"
               />
             </section>
           )}
@@ -262,7 +259,7 @@ export function SettingsModal({ controller }: SettingsModalProps) {
               type="color"
               value={glassTintColor}
               onChange={(event) => setGlassTintColor(event.target.value)}
-              className="h-12 w-24 cursor-pointer rounded-2xl border border-white/10 bg-transparent"
+              className="h-12 w-24 cursor-pointer rounded-2xl border border-white/10 bg-transparent text-base"
             />
           </section>
 
@@ -277,15 +274,15 @@ export function SettingsModal({ controller }: SettingsModalProps) {
               step={7}
               value={pageSize}
               onChange={(event) => setPageSize(event.target.value)}
-              className="w-24 rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+              className="w-24 rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 focus:border-sky-400/40 focus:outline-none focus:ring-0"
             />
           </section>
         </div>
-        <div className="flex items-center justify-between border-t border-white/10 bg-slate-900/80 px-6 py-4 text-sm text-slate-300 sm:px-8">
-          <div className="text-[13px] text-slate-500">
+        <div className="flex items-center justify-center sm:justify-between border-t border-white/10 bg-slate-900/80 px-6 py-4 text-sm text-slate-300 sm:px-8">
+          <div className="text-[13px] text-slate-500 hidden sm:block">
             Preferences are stored in this browser only.
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-2 items-center justify-between w-full sm:w-auto">
             <button
               type="button"
               onClick={() => controller.closeSettings()}
@@ -298,13 +295,13 @@ export function SettingsModal({ controller }: SettingsModalProps) {
               onClick={() => window.location.reload()}
               className="rounded-2xl border border-white/10 bg-white/5 px-5 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40"
             >
-              Reload App
+              Reload
             </button>
             <button
               type="submit"
               className="rounded-2xl bg-gradient-to-r from-sky-400/80 via-blue-500/80 to-fuchsia-500/80 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-sky-500/20 transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/50"
             >
-              Save changes
+              Save
             </button>
           </div>
         </div>
@@ -345,7 +342,7 @@ function SliderField({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="accent-sky-400"
+        className="accent-sky-400 text-base"
       />
     </label>
   );

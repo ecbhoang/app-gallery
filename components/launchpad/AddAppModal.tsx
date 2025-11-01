@@ -112,7 +112,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
               onChange={(event) =>
                 setFormState((prev) => ({ ...prev, name: event.target.value }))
               }
-              className="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+              className="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
               placeholder="Toolbox"
             />
           </label>
@@ -127,7 +127,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
               onChange={(event) =>
                 setFormState((prev) => ({ ...prev, url: event.target.value }))
               }
-              className="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+              className="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
               placeholder="https://example.com"
             />
           </label>
@@ -158,7 +158,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
               onChange={(event) =>
                 setFormState((prev) => ({ ...prev, tags: event.target.value }))
               }
-              className="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-sm text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+              className="rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
               placeholder="productivity, ai"
             />
           </label>
@@ -188,7 +188,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
                         iconCustom: "",
                       }))
                     }
-                    className="peer sr-only"
+                    className="peer sr-only text-base"
                   />
                   <span className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/10 bg-slate-900/40 p-3">
                     <img src={icon} alt="" className="h-full w-full object-contain" />
@@ -212,7 +212,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
                   onChange={() =>
                     setFormState((prev) => ({ ...prev, iconChoice: "custom" }))
                   }
-                  className="sr-only"
+                  className="sr-only text-base"
                 />
                 <span className="text-xs uppercase tracking-wide text-slate-400">
                   Custom icon URL
@@ -229,7 +229,7 @@ export function AddAppModal({ controller }: AddAppModalProps) {
                       iconCustom: event.target.value,
                     }))
                   }
-                  className="w-full rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-xs text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-900/40 px-4 py-2 text-base text-slate-100 placeholder:text-slate-500 focus:border-sky-400/40 focus:outline-none focus:ring-0"
                   placeholder="https://example.com/icon.png"
                 />
               </label>

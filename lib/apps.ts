@@ -23,7 +23,7 @@ export function mapCatalogApps(raw: unknown): LaunchpadApp[] {
 export function buildHiddenAppsGroup(count: number): LaunchpadApp {
   return {
     id: HIDDEN_GROUP_ID,
-    name: count === 1 ? "Hidden app" : "Hidden apps",
+    name: count === 1 ? "Hidden" : "Hiddens",
     description:
       count === 1
         ? "Open to restore the hidden app."
