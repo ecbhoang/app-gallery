@@ -1,7 +1,3 @@
-/** @type {import('next').NextConfig} */
-const isGithubPages = process.env.GITHUB_PAGES === "true";
-const repoName = process.env.GITHUB_REPOSITORY?.split("/")[1];
-
 const packageJson = require("./package.json");
 
 const isGithubPages = process.env.GITHUB_PAGES === "true";

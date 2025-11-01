@@ -34,7 +34,7 @@ jobs:
       - name: Export static site
         env:
           NEXT_PUBLIC_BASE_PATH: "/${{ github.event.repository.name }}"
-          NEXT_PUBLIC_APP_VERSION: "v${{ github.run_number }}"
+          NEXT_PUBLIC_APP_VERSION: "v${{ github.run_number }}-${{ github.sha.substr(0,7) }}"
           GITHUB_PAGES: "true"
           GITHUB_REPOSITORY: ${{ github.repository }}
         run: npm run export
