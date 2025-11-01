@@ -187,6 +187,9 @@ export function useLaunchpadView({
     const handlePointerDown = (event: PointerEvent) => {
       if (isMobileLayout) return;
       if (!gridViewportRef.current?.contains(event.target as Node)) return;
+      if (event.button !== 0) {
+        return;
+      }
       pointerInfoRef.current = {
         pointerId: event.pointerId,
         startX: event.clientX,
