@@ -13,6 +13,7 @@ import {
   createSlugId,
   dedupeHiddenIds,
   ensureUniqueAppIds,
+  mergeUserData,
   normalizePageSize,
   parseCustomTagString,
   sanitizeAppRecord,
@@ -26,6 +27,7 @@ import {
   saveSettingsToStorage,
   saveUserDataToStorage,
 } from "@lib/storage";
+import { APP_VERSION } from "@lib/version";
 import type {
   LaunchpadApp,
   LaunchpadContextMenuState,
@@ -38,6 +40,18 @@ type ContextMenuSource = "grid" | "hidden";
 export type LaunchpadError = {
   message: string;
 };
+
+type BackupActionResult = { success: boolean; message?: string };
+
+type LaunchpadBackupPayload = {
+  version?: unknown;
+  appVersion?: unknown;
+  generatedAt?: unknown;
+  settings?: unknown;
+  userData?: unknown;
+};
+
+const BACKUP_SCHEMA_VERSION = 1;
 
 export type CustomAppInput = {
   id?: string;
@@ -114,6 +128,8 @@ export type LaunchpadController = {
   ) => void;
   closeContextMenu: () => void;
   resetActiveIndex: () => void;
+  exportBackup: () => { success: boolean; message?: string };
+  importBackup: (data: unknown) => { success: boolean; message?: string };
 };
 
 const initialContextMenu: LaunchpadContextMenuState = {
@@ -606,6 +622,145 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
     setActiveIndexState(-1);
   }, []);
 
+  const exportBackup = useCallback((): BackupActionResult => {
+    if (typeof window === "undefined") {
+      return {
+        success: false,
+        message: "Không thể xuất dữ liệu trong môi trường hiện tại.",
+      };
+    }
+    try {
+      const payload = {
+        version: BACKUP_SCHEMA_VERSION,
+        appVersion: APP_VERSION,
+        generatedAt: new Date().toISOString(),
+        settings,
+        userData,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `launchpad-backup-${timestamp}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      return {
+        success: true,
+        message: "Đã xuất dữ liệu thành công.",
+      };
+    } catch (error) {
+      console.warn("Failed to export backup", error);
+      return {
+        success: false,
+        message: "Xuất dữ liệu thất bại. Vui lòng thử lại.",
+      };
+    }
+  }, [settings, userData]);
+
+  const importBackup = useCallback(
+    (data: unknown): BackupActionResult => {
+      if (!data || typeof data !== "object") {
+        return {
+          success: false,
+          message: "Tệp sao lưu không hợp lệ.",
+        };
+      }
+
+      const payload = data as LaunchpadBackupPayload;
+      const rawSettings = payload.settings;
+      const rawUserData = payload.userData;
+
+      if (!rawSettings && !rawUserData) {
+        return {
+          success: false,
+          message: "Tệp sao lưu thiếu dữ liệu cần thiết.",
+        };
+      }
+
+      let settingsUpdated = false;
+
+      if (rawSettings && typeof rawSettings === "object") {
+        const incomingSettings = rawSettings as Partial<LaunchpadSettings>;
+        const sanitized = updateSettingsFromForm(defaultSettings, {
+          ...defaultSettings,
+          ...incomingSettings,
+        });
+        sanitized.hasCompletedSetup =
+          typeof incomingSettings.hasCompletedSetup === "boolean"
+            ? incomingSettings.hasCompletedSetup
+            : settings.hasCompletedSetup ?? sanitized.hasCompletedSetup;
+        setSettings(sanitized);
+        saveSettingsToStorage(sanitized);
+        settingsUpdated = true;
+      }
+
+      let userDataUpdated = false;
+
+      if (rawUserData && typeof rawUserData === "object") {
+        const incomingUserData = rawUserData as Partial<LaunchpadUserData> & {
+          customApps?: unknown;
+          hiddenAppIds?: unknown;
+          pageSize?: unknown;
+        };
+
+        let sanitizedCustomApps: LaunchpadApp[] | undefined;
+        if (Array.isArray(incomingUserData.customApps)) {
+          sanitizedCustomApps = incomingUserData.customApps
+            .map((entry) => sanitizeAppRecord(entry, "custom"))
+            .filter((entry): entry is LaunchpadApp => Boolean(entry));
+        }
+
+        let sanitizedHiddenIds: string[] | undefined;
+        if (Array.isArray(incomingUserData.hiddenAppIds)) {
+          sanitizedHiddenIds = Array.from(
+            new Set(
+              incomingUserData.hiddenAppIds
+                .map((id) => (typeof id === "string" ? id.trim() : ""))
+                .filter((id) => id.length > 0)
+            )
+          );
+        }
+
+        const mergedUserData = mergeUserData(defaultUserData, {
+          ...(sanitizedHiddenIds ? { hiddenAppIds: sanitizedHiddenIds } : {}),
+          ...(sanitizedCustomApps ? { customApps: sanitizedCustomApps } : {}),
+          ...(incomingUserData.pageSize !== undefined
+            ? { pageSize: incomingUserData.pageSize }
+            : {}),
+        });
+
+        setUserData(mergedUserData);
+        saveUserDataToStorage(mergedUserData);
+        setCurrentPage(0);
+        setActiveIndexState(-1);
+        userDataUpdated = true;
+      }
+
+      if (!settingsUpdated && !userDataUpdated) {
+        return {
+          success: false,
+          message: "Không có thay đổi nào được áp dụng từ tệp sao lưu.",
+        };
+      }
+
+      return {
+        success: true,
+        message:
+          settingsUpdated && userDataUpdated
+            ? "Đã nhập cài đặt và dữ liệu ứng dụng thành công."
+            : settingsUpdated
+              ? "Đã nhập cài đặt thành công."
+              : "Đã nhập dữ liệu ứng dụng thành công.",
+      };
+    },
+    [settings.hasCompletedSetup]
+  );
+
   const editingApp = useMemo(
     () => findAppById(catalogApps, editingAppId),
     [catalogApps, editingAppId]
@@ -650,5 +805,7 @@ export function useLaunchpadState(isMobileLayout: boolean): LaunchpadController 
     openContextMenu,
     closeContextMenu,
     resetActiveIndex,
+    exportBackup,
+    importBackup,
   };
 }

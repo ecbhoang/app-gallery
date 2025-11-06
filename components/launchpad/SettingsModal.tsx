@@ -1,5 +1,12 @@
 import clsx from "clsx";
-import { useEffect, useState, type FormEvent } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type FormEvent,
+} from "react";
 import type { LaunchpadController } from "@hooks/useLaunchpadState";
 import { PRESET_BACKGROUND_OPTIONS, VERSION_STORAGE_KEY } from "@lib/constants";
 import CloseIcon from "@icons/CloseIcon";
@@ -50,6 +57,10 @@ export function SettingsModal({ controller }: SettingsModalProps) {
   const [mobileLayout, setMobileLayout] = useState(
     controller.settings.mobileLayout
   );
+  const [backupMessage, setBackupMessage] = useState<string | null>(null);
+  const [backupError, setBackupError] = useState<string | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     settings: controllerSettings,
@@ -149,6 +160,56 @@ export function SettingsModal({ controller }: SettingsModalProps) {
 
     window.location.reload();
   };
+
+  const resetBackupFeedback = useCallback(() => {
+    setBackupMessage(null);
+    setBackupError(null);
+  }, []);
+
+  const handleExportBackup = () => {
+    resetBackupFeedback();
+    const result = controller.exportBackup();
+    if (result.success) {
+      setBackupMessage(result.message ?? "Đã xuất dữ liệu thành công.");
+    } else {
+      setBackupError(result.message ?? "Xuất dữ liệu thất bại.");
+    }
+  };
+
+  const handleSelectImportFile = () => {
+    resetBackupFeedback();
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    resetBackupFeedback();
+    setIsImporting(true);
+    try {
+      const text = await file.text();
+      const parsed = JSON.parse(text);
+      const result = controller.importBackup(parsed);
+      if (result.success) {
+        setBackupMessage(result.message ?? "Đã nhập dữ liệu thành công.");
+      } else {
+        setBackupError(result.message ?? "Import dữ liệu thất bại.");
+      }
+    } catch (error) {
+      console.warn("Không thể đọc tệp sao lưu", error);
+      setBackupError("Tệp sao lưu không hợp lệ hoặc bị hỏng.");
+    } finally {
+      setIsImporting(false);
+      event.target.value = "";
+    }
+  };
+
+  useEffect(() => {
+    if (modals.settings) {
+      resetBackupFeedback();
+    }
+  }, [modals.settings, resetBackupFeedback]);
 
   return (
     <Modal
@@ -421,6 +482,51 @@ export function SettingsModal({ controller }: SettingsModalProps) {
                 </span>
               </span>
             </label>
+          </section>
+
+          <section className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/40 p-4">
+            <div className="space-y-2">
+              <h3 className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                Đồng bộ dữ liệu
+              </h3>
+              <p className="text-sm text-slate-400">
+                Xuất tệp JSON để sao lưu hoặc nhập lại để đồng bộ giữa các thiết bị.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={handleExportBackup}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 sm:w-auto"
+              >
+                Xuất dữ liệu
+              </button>
+              <button
+                type="button"
+                onClick={handleSelectImportFile}
+                disabled={isImporting}
+                className="w-full rounded-2xl border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-slate-200 transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400/40 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
+              >
+                {isImporting ? "Đang nhập..." : "Nhập dữ liệu"}
+              </button>
+            </div>
+            {(backupMessage || backupError) && (
+              <p
+                className={clsx(
+                  "text-xs",
+                  backupError ? "text-rose-300" : "text-emerald-300"
+                )}
+              >
+                {backupError ?? backupMessage}
+              </p>
+            )}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json"
+              className="sr-only"
+              onChange={handleImportFile}
+            />
           </section>
 
           <section className="space-y-3 rounded-2xl border border-white/10 bg-slate-900/40 p-4">
