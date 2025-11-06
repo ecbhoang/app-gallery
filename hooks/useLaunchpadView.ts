@@ -73,16 +73,16 @@ export function useLaunchpadView({
     currentPage,
     activeIndex,
     openContextMenu,
-  closeContextMenu,
-  closeSettings,
-  closeAddApp,
-  closeHiddenApps,
-  setPage,
-  openApp,
-  setSearchTerm,
-  resetActiveIndex,
-  advanceActiveIndex,
-} = controller;
+    closeContextMenu,
+    closeSettings,
+    closeAddApp,
+    closeHiddenApps,
+    setPage,
+    openApp,
+    setSearchTerm,
+    resetActiveIndex,
+    advanceActiveIndex,
+  } = controller;
 
   const longPressTimerRef = useRef<number | null>(null);
   const pointerInfoRef = useRef<PointerInfo | null>(null);
@@ -90,16 +90,18 @@ export function useLaunchpadView({
 
   const overlayStyle = useMemo<CSSProperties>(() => {
     return {
-      backgroundColor: `rgba(15, 23, 42, ${settings.overlayOpacity.toFixed(2)})`,
+      backgroundColor: `rgba(15, 23, 42, ${settings.overlayOpacity.toFixed(
+        2
+      )})`,
       backdropFilter: `blur(${settings.blurStrength}px)`,
     };
   }, [settings.overlayOpacity, settings.blurStrength]);
 
   const glassTint = useMemo<GlassTintStyle>(() => {
     return {
-      ["--glass-bg" as const]: `color-mix(in oklab, ${settings.glassTintColor} ${
-        settings.glassTintOpacity * 100
-      }%, transparent)`,
+      ["--glass-bg" as const]: `color-mix(in oklab, ${
+        settings.glassTintColor
+      } ${settings.glassTintOpacity * 100}%, transparent)`,
       ["--glass-border" as const]: `color-mix(in oklab, ${settings.glassTintColor} 70%, white)`,
     };
   }, [settings.glassTintColor, settings.glassTintOpacity]);
@@ -177,7 +179,9 @@ export function useLaunchpadView({
       pagesWrapperRef.current.style.transform = "none";
       return;
     }
-    pagesWrapperRef.current.style.transform = `translateX(-${currentPage * 100}%)`;
+    pagesWrapperRef.current.style.transform = `translateX(-${
+      currentPage * 100
+    }%)`;
   }, [currentPage, isMobileLayout, pagesWrapperRef]);
 
   useEffect(() => {
@@ -185,9 +189,31 @@ export function useLaunchpadView({
     if (!viewport) return;
 
     const handlePointerDown = (event: PointerEvent) => {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[LaunchpadView] pointerdown", {
+          button: event.button,
+          pointerType: event.pointerType,
+          target: event.target,
+        });
+      }
       if (isMobileLayout) return;
       if (!gridViewportRef.current?.contains(event.target as Node)) return;
       if (event.button !== 0) {
+        return;
+      }
+      const interactiveTarget = (event.target as HTMLElement | null)?.closest(
+        "button, a, input, textarea, select, [role='button'], [data-app-id]"
+      );
+      if (interactiveTarget) {
+        if (process.env.NODE_ENV !== "production") {
+          console.log(
+            "[LaunchpadView] pointerdown ignored for interactive element",
+            {
+              interactiveTarget,
+            }
+          );
+        }
+        pointerInfoRef.current = null;
         return;
       }
       pointerInfoRef.current = {
@@ -202,6 +228,12 @@ export function useLaunchpadView({
     };
 
     const handlePointerUp = (event: PointerEvent) => {
+      if (process.env.NODE_ENV !== "production") {
+        console.log("[LaunchpadView] pointerup", {
+          pointerId: event.pointerId,
+          target: event.target,
+        });
+      }
       const info = pointerInfoRef.current;
       if (!info || info.pointerId !== event.pointerId) return;
       if (isMobileLayout) {
@@ -219,7 +251,9 @@ export function useLaunchpadView({
       pointerInfoRef.current = null;
     };
 
-    viewport.addEventListener("pointerdown", handlePointerDown, { passive: true });
+    viewport.addEventListener("pointerdown", handlePointerDown, {
+      passive: true,
+    });
     viewport.addEventListener("pointerup", handlePointerUp, { passive: true });
     viewport.addEventListener("pointercancel", handlePointerCancel, {
       passive: true,
@@ -263,7 +297,8 @@ export function useLaunchpadView({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      const hasModalOpen = modals.settings || modals.addApp || modals.hiddenApps;
+      const hasModalOpen =
+        modals.settings || modals.addApp || modals.hiddenApps;
       if (hasModalOpen) {
         if (event.key === "Escape") {
           event.preventDefault();
@@ -334,7 +369,10 @@ export function useLaunchpadView({
         return;
       }
 
-      if ((event.key === "Backspace" || event.key === "Delete") && !isSearchFocused) {
+      if (
+        (event.key === "Backspace" || event.key === "Delete") &&
+        !isSearchFocused
+      ) {
         event.preventDefault();
         if (!searchElement) return;
         const currentValue = searchElement.value ?? "";
